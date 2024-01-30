@@ -1,0 +1,11 @@
+---
+source: integ-tests/tests/parser.rs
+expression: error
+---
+error[unexpected]: 
+  ┌─ exclamation:1:2
+  │
+1 │ [!]
+  │  ^ unexpected character '!'
+
+

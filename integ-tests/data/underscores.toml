@@ -1,0 +1,5 @@
+ten = 1_0
+hundred = 1_0_0
+thousand = 1_000
+thousand-pos = +1_000
+thousand-neg =-1_000

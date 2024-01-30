@@ -1,5 +1,4 @@
-use super::Key;
-use crate::Span;
+use crate::{value::Key, Span};
 use std::{borrow::Cow, char, str};
 
 #[derive(Eq, PartialEq, Debug)]
@@ -31,12 +30,12 @@ pub enum Error {
     InvalidCharInString(usize, char),
     InvalidEscape(usize, char),
     InvalidHexEscape(usize, char),
-    InvalidEscapeValue(usize, u32),
+    InvalidEscapeValue(usize, usize, u32),
     NewlineInString(usize),
     Unexpected(usize, char),
     UnterminatedString(usize),
     NewlineInTableKey(usize),
-    MultilineStringKey(usize),
+    MultilineStringKey(usize, usize),
     Wanted {
         at: usize,
         expected: &'static str,
@@ -173,7 +172,7 @@ impl<'a> Tokenizer<'a> {
             )) => {
                 let offset = self.substr_offset(src);
                 if multiline {
-                    return Err(Error::MultilineStringKey(offset));
+                    return Err(Error::MultilineStringKey(offset, offset + val.len()));
                 }
                 match src.find('\n') {
                     None => Ok(Key { span, name: val }),
@@ -414,7 +413,7 @@ impl<'a> Tokenizer<'a> {
         let val = u32::from_str_radix(&buf, 16).unwrap();
         match char::from_u32(val) {
             Some(ch) => Ok(ch),
-            None => Err(Error::InvalidEscapeValue(i, val)),
+            None => Err(Error::InvalidEscapeValue(i, len, val)),
         }
     }
 
