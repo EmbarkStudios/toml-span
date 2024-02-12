@@ -580,16 +580,16 @@ impl<'a> Deserializer<'a> {
             self.float(s, None).map(|f| Val {
                 e: E::Float(f),
                 start,
-                end,
+                end: self.tokens.current(),
             })
         } else if self.eat(Token::Period)? {
             let at = self.tokens.current();
             match self.next()? {
-                Some((Span { start, end }, Token::Keylike(after))) => {
+                Some((Span { .. }, Token::Keylike(after))) => {
                     self.float(s, Some(after)).map(|f| Val {
                         e: E::Float(f),
                         start,
-                        end,
+                        end: self.tokens.current(),
                     })
                 }
                 _ => Err(self.error(at, Some(end), ErrorKind::InvalidNumber)),

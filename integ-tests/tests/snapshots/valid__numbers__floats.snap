@@ -16,5 +16,5 @@ expression: valid_toml
   "twenty-punkt-ett": 201000000000.0,
   "two-exp": 20000000000.0,
   "two-neg-exp": 0.0000000002,
-  "two-pos-exp": 20000000000.0
+  "two-pos-exp": 200000000000.0
 }
