@@ -87,18 +87,9 @@ impl<'a> Tokenizer<'a> {
             Some((start, '}')) => (start, Token::RightBrace),
             Some((start, '[')) => (start, Token::LeftBracket),
             Some((start, ']')) => (start, Token::RightBracket),
-            Some((start, '\'')) => {
-                return self
-                    .literal_string(start)
-                    .map(|t| Some((self.step_span(start), t)))
-            }
-            Some((start, '"')) => {
-                return self
-                    .basic_string(start)
-                    .map(|t| Some((self.step_span(start), t)))
-            }
+            Some((start, '\'')) => return self.literal_string(start).map(|(s, t)| Some((s, t))),
+            Some((start, '"')) => return self.basic_string(start).map(|(s, t)| Some((s, t))),
             Some((start, ch)) if is_keylike(ch) => (start, self.keylike(start)),
-
             Some((start, ch)) => return Err(Error::Unexpected(start, ch)),
             None => return Ok(None),
         };
@@ -168,6 +159,7 @@ impl<'a> Tokenizer<'a> {
                     src,
                     val,
                     multiline,
+                    ..
                 },
             )) => {
                 let offset = self.substr_offset(src);
@@ -261,6 +253,11 @@ impl<'a> Tokenizer<'a> {
         Token::Comment(&self.input[start..self.current()])
     }
 
+    /// String spans are treated slightly differently, as we only want the
+    /// characters in the string, not the quotes, as once the user gets the
+    /// string and its span they won't know the actual begin/end which can
+    /// be needed for doing substring indices (eg reporting error messages
+    /// when parsing a string)
     fn read_string(
         &mut self,
         delim: char,
@@ -272,17 +269,22 @@ impl<'a> Tokenizer<'a> {
             usize,
             char,
         ) -> Result<(), Error>,
-    ) -> Result<Token<'a>, Error> {
+    ) -> Result<(Span, Token<'a>), Error> {
         let mut multiline = false;
         if self.eatc(delim) {
             if self.eatc(delim) {
                 multiline = true;
             } else {
-                return Ok(Token::String {
-                    src: &self.input[start..start + 2],
-                    val: Cow::Borrowed(""),
-                    multiline: false,
-                });
+                return Ok((
+                    // Point the caret at the beginning of the quote, that looks
+                    // better than the end quote
+                    (start..start + 1).into(),
+                    Token::String {
+                        src: &self.input[start..start + 2],
+                        val: Cow::Borrowed(""),
+                        multiline: false,
+                    },
+                ));
             }
         }
         let mut val = MaybeString::NotEscaped(self.current());
@@ -305,7 +307,7 @@ impl<'a> Tokenizer<'a> {
                     }
                 }
                 Some((mut i, ch)) if ch == delim => {
-                    if multiline {
+                    let span = if multiline {
                         if !self.eatc(delim) {
                             val.push(delim);
                             continue;
@@ -323,12 +325,31 @@ impl<'a> Tokenizer<'a> {
                             val.push(delim);
                             i += 1;
                         }
+
+                        // Also skip the first newline after the opening delimiters
+                        let maybe_nl = self.input.as_bytes()[start + 3];
+                        let start_off = if maybe_nl == b'\n' {
+                            4
+                        } else if maybe_nl == b'\r' {
+                            5
+                        } else {
+                            3
+                        };
+
+                        start + start_off..self.current() - 3
+                    } else {
+                        start + 1..self.current() - 1
                     }
-                    return Ok(Token::String {
-                        src: &self.input[start..self.current()],
-                        val: val.into_cow(&self.input[..i]),
-                        multiline,
-                    });
+                    .into();
+
+                    return Ok((
+                        span,
+                        Token::String {
+                            src: &self.input[start..self.current()],
+                            val: val.into_cow(&self.input[..i]),
+                            multiline,
+                        },
+                    ));
                 }
                 Some((i, c)) => new_ch(self, &mut val, multiline, i, c)?,
                 None => return Err(Error::UnterminatedString(start)),
@@ -336,7 +357,7 @@ impl<'a> Tokenizer<'a> {
         }
     }
 
-    fn literal_string(&mut self, start: usize) -> Result<Token<'a>, Error> {
+    fn literal_string(&mut self, start: usize) -> Result<(Span, Token<'a>), Error> {
         self.read_string('\'', start, &mut |_me, val, _multi, i, ch| {
             if ch == '\u{09}' || ('\u{20}' <= ch && ch <= '\u{10ffff}' && ch != '\u{7f}') {
                 val.push(ch);
@@ -347,7 +368,7 @@ impl<'a> Tokenizer<'a> {
         })
     }
 
-    fn basic_string(&mut self, start: usize) -> Result<Token<'a>, Error> {
+    fn basic_string(&mut self, start: usize) -> Result<(Span, Token<'a>), Error> {
         self.read_string('"', start, &mut |me, val, multi, i, ch| match ch {
             '\\' => {
                 val.make_owned(&me.input[..i]);

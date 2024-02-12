@@ -1,0 +1,107 @@
+---
+source: integ-tests/tests/valid.rs
+expression: spans
+---
+note[string]: root_albums_0_name
+  ┌─ nested_arrays:3:9
+  │
+3 │ name = "Born to Run"
+  │         ^^^^^^^^^^^
+
+note[string]: root_albums_0_songs_0_name
+  ┌─ nested_arrays:6:11
+  │
+6 │   name = "Jungleland"
+  │           ^^^^^^^^^^
+
+note[table]: root_albums_0_songs_0
+  ┌─ nested_arrays:1:1
+  │
+1 │ 
+  │ ^
+
+note[string]: root_albums_0_songs_1_name
+  ┌─ nested_arrays:9:11
+  │
+9 │   name = "Meeting Across the River"
+  │           ^^^^^^^^^^^^^^^^^^^^^^^^
+
+note[table]: root_albums_0_songs_1
+  ┌─ nested_arrays:1:1
+  │
+1 │ 
+  │ ^
+
+note[array]: root_albums_0_songs
+  ┌─ nested_arrays:1:1
+  │
+1 │ 
+  │ ^
+
+note[table]: root_albums_0
+  ┌─ nested_arrays:1:1
+  │
+1 │ 
+  │ ^
+
+note[string]: root_albums_1_name
+   ┌─ nested_arrays:12:9
+   │
+12 │ name = "Born in the USA"
+   │         ^^^^^^^^^^^^^^^
+
+note[string]: root_albums_1_songs_0_name
+   ┌─ nested_arrays:15:11
+   │
+15 │   name = "Glory Days"
+   │           ^^^^^^^^^^
+
+note[table]: root_albums_1_songs_0
+  ┌─ nested_arrays:1:1
+  │
+1 │ 
+  │ ^
+
+note[string]: root_albums_1_songs_1_name
+   ┌─ nested_arrays:18:11
+   │
+18 │   name = "Dancing in the Dark"
+   │           ^^^^^^^^^^^^^^^^^^^
+
+note[table]: root_albums_1_songs_1
+  ┌─ nested_arrays:1:1
+  │
+1 │ 
+  │ ^
+
+note[array]: root_albums_1_songs
+  ┌─ nested_arrays:1:1
+  │
+1 │ 
+  │ ^
+
+note[table]: root_albums_1
+  ┌─ nested_arrays:1:1
+  │
+1 │ 
+  │ ^
+
+note[array]: root_albums
+  ┌─ nested_arrays:1:1
+  │
+1 │ 
+  │ ^
+
+note[table]: root
+   ┌─ nested_arrays:1:1
+   │  
+ 1 │ ╭ 
+ 2 │ │ [[albums]]
+ 3 │ │ name = "Born to Run"
+ 4 │ │ 
+   · │
+18 │ │   name = "Dancing in the Dark"
+19 │ │ 
+   │ ╰^
+
+

@@ -8,10 +8,6 @@ Flattened {
             spec: Package {
                 name: "simple",
                 version: None,
-                span: Span {
-                    start: 18,
-                    end: 26,
-                },
             },
             inner: None,
         },
@@ -21,10 +17,6 @@ Flattened {
                 version: Some(
                     "0.2.0",
                 ),
-                span: Span {
-                    start: 42,
-                    end: 56,
-                },
             },
             inner: None,
         },
@@ -34,10 +26,6 @@ Flattened {
                 version: Some(
                     ">=0.2",
                 ),
-                span: Span {
-                    start: 73,
-                    end: 80,
-                },
             },
             inner: None,
         },
@@ -45,10 +33,6 @@ Flattened {
             spec: Package {
                 name: "split2",
                 version: None,
-                span: Span {
-                    start: 116,
-                    end: 124,
-                },
             },
             inner: None,
         },
@@ -56,10 +40,6 @@ Flattened {
             spec: Package {
                 name: "single2",
                 version: None,
-                span: Span {
-                    start: 142,
-                    end: 151,
-                },
             },
             inner: Some(
                 Reason {

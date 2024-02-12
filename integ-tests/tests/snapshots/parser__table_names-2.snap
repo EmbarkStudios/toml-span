@@ -1,0 +1,59 @@
+---
+source: integ-tests/tests/parser.rs
+expression: spans
+---
+note[table]: root_"
+  ┌─ table_names:1:1
+  │
+1 │ [a."b"]
+  │ ^
+
+note[table]: root_""
+  ┌─ table_names:1:1
+  │
+1 │ [a."b"]
+  │ ^
+
+note[table]: root_a_b
+  ┌─ table_names:1:1
+  │
+1 │ [a."b"]
+  │ ^
+
+note[table]: root_a
+  ┌─ table_names:1:1
+  │
+1 │ [a."b"]
+  │ ^
+
+note[table]: root_a.a
+  ┌─ table_names:1:1
+  │
+1 │ [a."b"]
+  │ ^
+
+note[table]: root_f f
+  ┌─ table_names:1:1
+  │
+1 │ [a."b"]
+  │ ^
+
+note[table]: root_f.f
+  ┌─ table_names:1:1
+  │
+1 │ [a."b"]
+  │ ^
+
+note[table]: root
+  ┌─ table_names:1:1
+  │  
+1 │ ╭ [a."b"]
+2 │ │ ["f f"]
+3 │ │ ["f.f"]
+4 │ │ ["\""]
+5 │ │ ['a.a']
+6 │ │ ['""']
+7 │ │ 
+  │ ╰^
+
+
