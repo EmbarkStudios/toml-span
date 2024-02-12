@@ -5,7 +5,7 @@ use toml_file::{
     de_helpers::*,
     span::Spanned,
     value::{Value, ValueInner},
-    DeserError, Deserialize, Span,
+    DeserError, Deserialize,
 };
 
 #[derive(Debug)]
@@ -34,7 +34,6 @@ invalid_de!(missing_required, Boop, "os = 20");
 struct Package {
     name: String,
     version: Option<String>,
-    span: Span,
 }
 
 impl<'de> Deserialize<'de> for Package {
@@ -51,11 +50,7 @@ impl<'de> Deserialize<'de> for Package {
             ValueInner::String(s) => {
                 let (name, version) = from_str(s);
 
-                Ok(Self {
-                    name,
-                    version,
-                    span: value.span,
-                })
+                Ok(Self { name, version })
             }
             ValueInner::Table(tab) => {
                 let mut th = TableHelper::from(tab);
@@ -73,11 +68,7 @@ impl<'de> Deserialize<'de> for Package {
 
                     th.finalize(Some(value))?;
 
-                    Ok(Self {
-                        name,
-                        version,
-                        span: val.span,
-                    })
+                    Ok(Self { name, version })
                 } else {
                     let name = th.required_s("name")?;
                     let version = th.optional("version");
@@ -87,7 +78,6 @@ impl<'de> Deserialize<'de> for Package {
                     Ok(Self {
                         name: name.value,
                         version,
-                        span: name.span,
                     })
                 }
             }

@@ -4,11 +4,12 @@ macro_rules! valid {
     ($name:ident) => {
         #[test]
         fn $name() {
-            let toml_str =
-                std::fs::read_to_string(dbg!(concat!("data/", stringify!($name), ".toml")))
-                    .expect(concat!("failed to load ", stringify!($name), ".toml"));
+            let toml_str = std::fs::read_to_string(concat!("data/", stringify!($name), ".toml"))
+                .expect(concat!("failed to load ", stringify!($name), ".toml"));
             let valid_toml = toml_file::parse(&toml_str).expect("failed to parse toml");
             insta::assert_json_snapshot!(valid_toml);
+
+            $crate::emit_spans!($name, valid_toml, &toml_str);
         }
     };
     ($name:ident, $toml:literal) => {
@@ -16,6 +17,8 @@ macro_rules! valid {
         fn $name() {
             let valid_toml = toml_file::parse($toml).expect("failed to parse toml");
             insta::assert_json_snapshot!(valid_toml);
+
+            $crate::emit_spans!($name, valid_toml, $toml);
         }
     };
 }
@@ -24,7 +27,7 @@ macro_rules! valid {
 macro_rules! unexpected {
     ($name:ident, $err:expr, $toml:expr) => {{
         let file = $crate::File::new(stringify!($name), $toml);
-        let error = $crate::emit_error(&file, $err);
+        let error = $crate::emit_diags(&file, $err);
 
         panic!("unexpected toml deserialization errors:\n{error}");
     }};
@@ -37,9 +40,8 @@ macro_rules! valid_de {
     ($name:ident, $kind:ty) => {
         #[test]
         fn $name() {
-            let toml_str =
-                std::fs::read_to_string(dbg!(concat!("data/", stringify!($name), ".toml")))
-                    .expect(concat!("failed to load ", stringify!($name), ".toml"));
+            let toml_str = std::fs::read_to_string(concat!("data/", stringify!($name), ".toml"))
+                .expect(concat!("failed to load ", stringify!($name), ".toml"));
             let mut valid_toml = toml_file::parse(&toml_str).expect("failed to parse toml");
 
             match <$kind>::deserialize(&mut valid_toml) {
@@ -84,9 +86,8 @@ macro_rules! invalid_de {
     ($name:ident, $kind:ty) => {
         #[test]
         fn $name() {
-            let toml_str =
-                std::fs::read_to_string(dbg!(concat!("data/", stringify!($name), ".toml")))
-                    .expect(concat!("failed to load ", stringify!($name), ".toml"));
+            let toml_str = std::fs::read_to_string(concat!("data/", stringify!($name), ".toml"))
+                .expect(concat!("failed to load ", stringify!($name), ".toml"));
             let mut valid_toml = toml_file::parse(&toml_str).expect("failed to parse toml");
 
             match <$kind>::deserialize(&mut valid_toml) {
@@ -126,7 +127,7 @@ macro_rules! invalid_de {
 
 pub type File<'s> = codespan_reporting::files::SimpleFile<&'static str, &'s str>;
 
-pub fn emit_error(
+pub fn emit_diags(
     f: &File,
     error: impl IntoIterator<Item = codespan_reporting::diagnostic::Diagnostic<()>>,
 ) -> String {
@@ -151,8 +152,61 @@ pub fn emit_error(
 macro_rules! error_snapshot {
     ($name:ident, $err:expr, $toml:expr) => {
         let file = $crate::File::new(stringify!($name), $toml);
-        let error = $crate::emit_error(&file, $err);
+        let error = $crate::emit_diags(&file, $err);
         insta::assert_snapshot!(error);
+    };
+}
+
+use codespan_reporting::diagnostic::Diagnostic;
+
+pub fn collect_spans(
+    key: &str,
+    val: &toml_file::value::Value<'_>,
+    diags: &mut Vec<Diagnostic<()>>,
+) {
+    use codespan_reporting::diagnostic::Label;
+    use toml_file::value::ValueInner;
+
+    let code = match val.as_ref() {
+        ValueInner::String(_s) => "string",
+        ValueInner::Integer(_s) => "integer",
+        ValueInner::Float(_s) => "float",
+        ValueInner::Boolean(_s) => "bool",
+        ValueInner::Array(arr) => {
+            for (i, v) in arr.iter().enumerate() {
+                collect_spans(&format!("{key}_{i}"), v, diags);
+            }
+
+            "array"
+        }
+        ValueInner::Table(tab) => {
+            for (k, v) in tab {
+                collect_spans(&format!("{key}_{}", k.name), v, diags);
+            }
+
+            "table"
+        }
+    };
+
+    diags.push(
+        Diagnostic::note()
+            .with_code(code)
+            .with_message(key)
+            .with_labels(vec![Label::primary((), val.span)]),
+    );
+}
+
+#[macro_export]
+macro_rules! emit_spans {
+    ($name:ident, $val:expr, $toml:expr) => {
+        let file = $crate::File::new(stringify!($name), $toml);
+
+        let mut spans = Vec::new();
+
+        $crate::collect_spans("root", &$val, &mut spans);
+
+        let spans = $crate::emit_diags(&file, spans);
+        insta::assert_snapshot!(spans);
     };
 }
 

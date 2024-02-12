@@ -11,17 +11,23 @@ fn err(input: &str, err: Error) {
 
 #[test]
 fn strings() {
-    fn t(input: &str, val: &str, multiline: bool) {
+    fn t(input: &str, eval: &str, emultiline: bool) {
         let mut t = Tokenizer::new(input);
         let (_, token) = t.next().unwrap().unwrap();
-        assert_eq!(
-            token,
-            Token::String {
-                src: input,
-                val: Cow::Borrowed(val),
-                multiline,
-            }
-        );
+
+        if let Token::String {
+            src,
+            val,
+            multiline,
+            ..
+        } = token
+        {
+            assert_eq!(src, input);
+            assert_eq!(val, Cow::Borrowed(eval));
+            assert_eq!(multiline, emultiline);
+        } else {
+            panic!("not a string");
+        }
         assert!(t.next().unwrap().is_none());
     }
 
