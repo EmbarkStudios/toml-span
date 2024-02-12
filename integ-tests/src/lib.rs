@@ -42,12 +42,16 @@ macro_rules! valid_de {
                     .expect(concat!("failed to load ", stringify!($name), ".toml"));
             let mut valid_toml = toml_file::parse(&toml_str).expect("failed to parse toml");
 
-            match $kind::deserialize(&mut valid_toml) {
+            match <$kind>::deserialize(&mut valid_toml) {
                 Ok(de) => {
                     insta::assert_debug_snapshot!(de);
                 }
                 Err(err) => {
-                    $crate::unexpected!($name, err.errors, toml_str);
+                    $crate::unexpected!(
+                        $name,
+                        err.errors.into_iter().map(|d| d.to_diagnostic(())),
+                        &toml_str
+                    );
                 }
             }
         }
@@ -62,7 +66,58 @@ macro_rules! valid_de {
                     insta::assert_debug_snapshot!(de);
                 }
                 Err(err) => {
-                    $crate::unexpected!($name, err.errors, $toml);
+                    $crate::unexpected!(
+                        $name,
+                        err.errors.into_iter().map(|d| d.to_diagnostic(())),
+                        $toml
+                    );
+                }
+            }
+        }
+    };
+}
+
+/// Loads a valid toml file, deserializes it to the specified type and asserts
+/// the appropriate errors are produced
+#[macro_export]
+macro_rules! invalid_de {
+    ($name:ident, $kind:ty) => {
+        #[test]
+        fn $name() {
+            let toml_str =
+                std::fs::read_to_string(dbg!(concat!("data/", stringify!($name), ".toml")))
+                    .expect(concat!("failed to load ", stringify!($name), ".toml"));
+            let mut valid_toml = toml_file::parse(&toml_str).expect("failed to parse toml");
+
+            match <$kind>::deserialize(&mut valid_toml) {
+                Ok(de) => {
+                    panic!("expected errors but deserialized '{de:#?}' successfully");
+                }
+                Err(err) => {
+                    $crate::error_snapshot!(
+                        $name,
+                        err.errors.into_iter().map(|d| d.to_diagnostic(())),
+                        &toml_str
+                    );
+                }
+            }
+        }
+    };
+    ($name:ident, $kind:ty, $toml:literal) => {
+        #[test]
+        fn $name() {
+            let mut valid_toml = toml_file::parse($toml).expect("failed to parse toml");
+
+            match <$kind>::deserialize(&mut valid_toml) {
+                Ok(de) => {
+                    panic!("expected errors but deserialized '{de:#?}' successfully");
+                }
+                Err(err) => {
+                    $crate::error_snapshot!(
+                        $name,
+                        err.errors.into_iter().map(|d| d.to_diagnostic(())),
+                        $toml
+                    );
                 }
             }
         }
@@ -71,11 +126,13 @@ macro_rules! valid_de {
 
 pub type File<'s> = codespan_reporting::files::SimpleFile<&'static str, &'s str>;
 
-pub fn emit_error(f: &File, error: impl IntoIterator<Item = toml_file::Error>) -> String {
+pub fn emit_error(
+    f: &File,
+    error: impl IntoIterator<Item = codespan_reporting::diagnostic::Diagnostic<()>>,
+) -> String {
     let mut output = codespan_reporting::term::termcolor::NoColor::new(Vec::new());
 
-    for err in error {
-        let diag = err.to_diagnostic(());
+    for diag in error {
         codespan_reporting::term::emit(
             &mut output,
             &codespan_reporting::term::Config::default(),
@@ -116,7 +173,7 @@ macro_rules! invalid {
         #[test]
         fn $name() {
             let error = toml_file::parse($toml).unwrap_err();
-            $crate::error_snapshot!($name, Some(error), $toml);
+            $crate::error_snapshot!($name, Some(error.to_diagnostic(())), $toml);
         }
     };
 }

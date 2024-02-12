@@ -1,0 +1,7 @@
+---
+source: integ-tests/tests/de.rs
+expression: error
+---
+error[missing-field]: missing field 's'
+
+

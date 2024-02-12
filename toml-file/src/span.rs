@@ -47,7 +47,15 @@ pub struct Spanned<T> {
 
 impl<T> Spanned<T> {
     #[inline]
-    pub const fn new(value: T, span: Span) -> Self {
+    pub const fn new(value: T) -> Self {
+        Self {
+            value,
+            span: Span { start: 0, end: 0 },
+        }
+    }
+
+    #[inline]
+    pub const fn with_span(value: T, span: Span) -> Self {
         Self { value, span }
     }
 
@@ -55,6 +63,16 @@ impl<T> Spanned<T> {
     #[inline]
     pub fn take(self) -> T {
         self.value
+    }
+
+    pub fn map<V>(self) -> Spanned<V>
+    where
+        V: From<T>,
+    {
+        Spanned {
+            value: self.value.into(),
+            span: self.span,
+        }
     }
 }
 
@@ -135,12 +153,12 @@ where
     }
 }
 
-impl<T> crate::Deserialize for Spanned<T>
+impl<'de, T> crate::Deserialize<'de> for Spanned<T>
 where
-    T: crate::Deserialize,
+    T: crate::Deserialize<'de>,
 {
     #[inline]
-    fn deserialize<'de>(value: &mut crate::value::Value<'de>) -> Result<Self, crate::DeserError> {
+    fn deserialize(value: &mut crate::value::Value<'de>) -> Result<Self, crate::DeserError> {
         let span = value.span;
         let value = T::deserialize(value)?;
         Ok(Self { span, value })

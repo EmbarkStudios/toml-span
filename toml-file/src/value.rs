@@ -1,4 +1,4 @@
-use crate::Span;
+use crate::{Error, ErrorKind, Span};
 use std::{borrow::Cow, fmt};
 
 #[cfg(feature = "serde")]
@@ -26,6 +26,49 @@ impl<'de> Value<'de> {
     #[inline]
     pub fn take(&mut self) -> ValueInner<'de> {
         self.value.take().expect("the value has already been taken")
+    }
+
+    #[inline]
+    pub fn set(&mut self, value: ValueInner<'de>) {
+        self.value = Some(value);
+    }
+
+    /// Returns true if the value is a table and is non-empty
+    #[inline]
+    pub fn has_keys(&self) -> bool {
+        self.value.as_ref().map_or(false, |val| {
+            if let ValueInner::Table(table) = val {
+                !table.is_empty()
+            } else {
+                false
+            }
+        })
+    }
+
+    #[inline]
+    pub fn has_key(&self, key: &str) -> bool {
+        self.value.as_ref().map_or(false, |val| {
+            if let ValueInner::Table(table) = val {
+                table.contains_key(&key.into())
+            } else {
+                false
+            }
+        })
+    }
+
+    #[inline]
+    pub fn take_string(&mut self, msg: Option<&'static str>) -> Result<Cow<'de, str>, Error> {
+        match self.take() {
+            ValueInner::String(s) => Ok(s),
+            other => Err(Error {
+                kind: ErrorKind::Wanted {
+                    expected: msg.unwrap_or("a string"),
+                    found: other.type_str(),
+                },
+                span: self.span,
+                line_info: None,
+            }),
+        }
     }
 }
 

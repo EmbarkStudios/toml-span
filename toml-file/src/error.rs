@@ -2,7 +2,7 @@ use crate::Span;
 use std::fmt::{self, Debug, Display};
 
 /// Error that can occur when deserializing TOML.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Error {
     pub kind: ErrorKind,
     pub span: Span,
@@ -11,8 +11,18 @@ pub struct Error {
 
 impl std::error::Error for Error {}
 
+impl From<(ErrorKind, Span)> for Error {
+    fn from((kind, span): (ErrorKind, Span)) -> Self {
+        Self {
+            kind,
+            span,
+            line_info: None,
+        }
+    }
+}
+
 /// Errors that can occur when deserializing a type.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ErrorKind {
     /// EOF was reached when looking for a value.
     UnexpectedEof,
@@ -104,8 +114,17 @@ pub enum ErrorKind {
     /// Unquoted string was found when quoted one was expected.
     UnquotedString,
 
-    /// A required
+    /// A required field is missing from a table
     MissingField(&'static str),
+
+    /// A field in the table is deprecated and the new key should be used instead
+    Deprecated {
+        old: &'static str,
+        new: &'static str,
+    },
+
+    /// An unexpected value was encountered
+    UnexpectedValue { expected: &'static [&'static str] },
 }
 
 impl Display for ErrorKind {
@@ -134,6 +153,8 @@ impl Display for ErrorKind {
             Self::InvalidNumber => f.write_str("invalid-number"),
             Self::Wanted { .. } => f.write_str("wanted"),
             Self::MissingField(..) => f.write_str("missing-field"),
+            Self::Deprecated { .. } => f.write_str("deprecated"),
+            Self::UnexpectedValue { .. } => f.write_str("unexpected-value"),
         }
     }
 }
@@ -203,7 +224,11 @@ impl Display for Error {
             ErrorKind::UnquotedString => {
                 f.write_str("invalid TOML value, did you mean to use a quoted string?")?
             }
-            ErrorKind::MissingField(field) => f.write_str("missing field '{field}' in table")?,
+            ErrorKind::MissingField(field) => write!(f, "missing field '{field}' in table")?,
+            ErrorKind::Deprecated { old, new } => {
+                write!(f, "field '{old}' is deprecated, '{new}' has replaced it")?
+            }
+            ErrorKind::UnexpectedValue { expected } => write!(f, "expected '{expected:?}'")?,
         }
 
         // if !self.key.is_empty() {
@@ -286,9 +311,47 @@ impl Error {
                         .map(|(_name, span)| Label::secondary(fid, *span))
                         .collect(),
                 ),
+            ErrorKind::MissingField(field) => diag.with_message(format!("missing field '{field}'")),
+            ErrorKind::Deprecated { new, .. } => diag
+                .with_message(format!(
+                    "deprecated field enountered, '{new}' should be used instead"
+                ))
+                .with_labels(vec![
+                    Label::primary(fid, self.span).with_message("deprecated field")
+                ]),
+            ErrorKind::UnexpectedValue { expected } => diag
+                .with_message(format!("expected '{expected:?}'"))
+                .with_labels(vec![
+                    Label::primary(fid, self.span).with_message("unexpected value")
+                ]),
             kind => unimplemented!("{kind}"),
         };
 
         diag
+    }
+}
+
+#[derive(Debug)]
+pub struct DeserError {
+    pub errors: Vec<Error>,
+}
+
+impl std::error::Error for DeserError {}
+
+impl From<Error> for DeserError {
+    fn from(value: Error) -> Self {
+        Self {
+            errors: vec![value],
+        }
+    }
+}
+
+impl fmt::Display for DeserError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for err in &self.errors {
+            writeln!(f, "{err}")?;
+        }
+
+        Ok(())
     }
 }

@@ -67,14 +67,14 @@ impl<'de, 'b> Ctx<'de, 'b> {
 
 macro_rules! printc {
     ($c:expr, $($arg:tt)*) => {{
-        let ctx = $c;
-        for _ in 0..ctx.depth {
-            eprint!(" ");
-        }
+        // let ctx = $c;
+        // for _ in 0..ctx.depth {
+        //     eprint!(" ");
+        // }
 
-        eprint!("{}:{} {}:{} ", file!(), line!(), ctx.cur_parent, ctx.cur);
+        // eprint!("{}:{} {}:{} ", file!(), line!(), ctx.cur_parent, ctx.cur);
 
-        eprintln!($($arg)*);
+        // eprintln!($($arg)*);
     }};
 }
 
@@ -269,12 +269,12 @@ fn deserialize_array<'de, 'b>(
     tables: &'b mut [Table<'de>],
     arr: &mut Vec<value::Value<'de>>,
 ) -> Result<usize, Error> {
-    if let Some(values) = ctx.values.take() {
-        for (key, val) in values {
-            printc!(&ctx, "{} => {val:?}", key.name);
-            arr.push(to_value(val, ctx.de)?);
-        }
-    }
+    // if let Some(values) = ctx.values.take() {
+    //     for (key, val) in values {
+    //         //printc!(&ctx, "{} => {val:?}", key.name);
+    //         arr.push(to_value(val, ctx.de)?);
+    //     }
+    // }
 
     while ctx.cur_parent < ctx.max {
         let header_stripped = tables[ctx.cur_parent]

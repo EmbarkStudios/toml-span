@@ -1,0 +1,7 @@
+packages = [
+    "first",
+    { name = "second" },
+    { name = "third", version = "3.0.0" },
+    { crate = "fourth:0.1" },
+    "last",
+]

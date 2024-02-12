@@ -1,0 +1,71 @@
+---
+source: integ-tests/tests/de.rs
+expression: de
+---
+Flattened {
+    flattened: [
+        PackageSpecOrExtended {
+            spec: Package {
+                name: "simple",
+                version: None,
+                span: Span {
+                    start: 18,
+                    end: 26,
+                },
+            },
+            inner: None,
+        },
+        PackageSpecOrExtended {
+            spec: Package {
+                name: "single",
+                version: Some(
+                    "0.2.0",
+                ),
+                span: Span {
+                    start: 42,
+                    end: 56,
+                },
+            },
+            inner: None,
+        },
+        PackageSpecOrExtended {
+            spec: Package {
+                name: "split",
+                version: Some(
+                    ">=0.2",
+                ),
+                span: Span {
+                    start: 73,
+                    end: 80,
+                },
+            },
+            inner: None,
+        },
+        PackageSpecOrExtended {
+            spec: Package {
+                name: "split2",
+                version: None,
+                span: Span {
+                    start: 116,
+                    end: 124,
+                },
+            },
+            inner: None,
+        },
+        PackageSpecOrExtended {
+            spec: Package {
+                name: "single2",
+                version: None,
+                span: Span {
+                    start: 142,
+                    end: 151,
+                },
+            },
+            inner: Some(
+                Reason {
+                    reason: "additional data",
+                },
+            ),
+        },
+    ],
+}

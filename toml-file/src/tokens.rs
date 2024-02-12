@@ -360,8 +360,12 @@ impl<'a> Tokenizer<'a> {
                     Some((_, 'r')) => val.push('\r'),
                     Some((_, 't')) => val.push('\t'),
                     Some((i, c @ ('u' | 'U'))) => {
-                        let len = if c == 'u' { 4 } else { 8 };
-                        val.push(me.hex(start, i, len)?);
+                        let c = if c == 'u' {
+                            me.hex::<4>(start, i)
+                        } else {
+                            me.hex::<8>(start, i)
+                        };
+                        val.push(c?);
                     }
                     Some((i, c @ (' ' | '\t' | '\n'))) if multi => {
                         if c != '\n' {
@@ -401,19 +405,19 @@ impl<'a> Tokenizer<'a> {
         })
     }
 
-    fn hex(&mut self, start: usize, i: usize, len: usize) -> Result<char, Error> {
-        let mut buf = String::with_capacity(len);
-        for _ in 0..len {
+    fn hex<const N: usize>(&mut self, start: usize, i: usize) -> Result<char, Error> {
+        let mut buf = [0; N];
+        for i in 0..N {
             match self.one() {
-                Some((_, ch)) if ch as u32 <= 0x7F && ch.is_ascii_hexdigit() => buf.push(ch),
+                Some((_, ch)) if ch as u32 <= 0x7F && ch.is_ascii_hexdigit() => buf[i] = ch as u8,
                 Some((i, ch)) => return Err(Error::InvalidHexEscape(i, ch)),
                 None => return Err(Error::UnterminatedString(start)),
             }
         }
-        let val = u32::from_str_radix(&buf, 16).unwrap();
+        let val = u32::from_str_radix(std::str::from_utf8(&buf).unwrap(), 16).unwrap();
         match char::from_u32(val) {
             Some(ch) => Ok(ch),
-            None => Err(Error::InvalidEscapeValue(i, len, val)),
+            None => Err(Error::InvalidEscapeValue(i, N, val)),
         }
     }
 

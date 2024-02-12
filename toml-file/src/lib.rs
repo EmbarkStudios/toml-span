@@ -6,21 +6,12 @@ pub mod tokens;
 pub mod value;
 
 pub use de::parse;
-pub use error::{Error, ErrorKind};
+pub use error::{DeserError, Error, ErrorKind};
 pub use span::Span;
 
-pub struct DeserError {
-    pub errors: Vec<Error>,
+pub trait Deserialize<'de>: Sized {
+    fn deserialize(value: &mut value::Value<'de>) -> Result<Self, DeserError>;
 }
 
-impl From<Error> for DeserError {
-    fn from(value: Error) -> Self {
-        Self {
-            errors: vec![value],
-        }
-    }
-}
-
-pub trait Deserialize: Sized {
-    fn deserialize<'de>(value: &mut value::Value<'de>) -> Result<Self, DeserError>;
-}
+pub trait DeserializeOwned: for<'de> Deserialize<'de> {}
+impl<T> DeserializeOwned for T where T: for<'de> Deserialize<'de> {}
