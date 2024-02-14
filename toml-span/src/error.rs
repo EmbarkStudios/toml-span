@@ -109,6 +109,7 @@ pub enum ErrorKind {
     UnexpectedKeys {
         /// The unexpected keys.
         keys: Vec<(String, Span)>,
+        expected: Vec<String>,
     },
 
     /// Unquoted string was found when quoted one was expected.
@@ -218,9 +219,10 @@ impl Display for Error {
             ErrorKind::DottedKeyInvalidType => {
                 f.write_str("dotted key attempted to extend non-table type")?;
             }
-            ErrorKind::UnexpectedKeys { keys } => {
-                write!(f, "unexpected keys in table: `{keys:?}`")?
-            }
+            ErrorKind::UnexpectedKeys { keys, expected } => write!(
+                f,
+                "unexpected keys in table: `{keys:?}`\nexpected: {expected:?}"
+            )?,
             ErrorKind::UnquotedString => {
                 f.write_str("invalid TOML value, did you mean to use a quoted string?")?
             }
@@ -304,14 +306,21 @@ impl Error {
             ErrorKind::UnquotedString => diag.with_labels(vec![
                 Label::primary(fid, self.span).with_message("string is not quoted")
             ]),
-            ErrorKind::UnexpectedKeys { keys } => diag
-                .with_message(format!("found {} unexpected keys", keys.len()))
+            ErrorKind::UnexpectedKeys { keys, expected } => diag
+                .with_message(format!(
+                    "found {} unexpected keys, expected: {expected:?}",
+                    keys.len()
+                ))
                 .with_labels(
                     keys.iter()
                         .map(|(_name, span)| Label::secondary(fid, *span))
                         .collect(),
                 ),
-            ErrorKind::MissingField(field) => diag.with_message(format!("missing field '{field}'")),
+            ErrorKind::MissingField(field) => diag
+                .with_message(format!("missing field '{field}'"))
+                .with_labels(vec![
+                    Label::primary(fid, self.span).with_message("table with missing field")
+                ]),
             ErrorKind::Deprecated { new, .. } => diag
                 .with_message(format!(
                     "deprecated field enountered, '{new}' should be used instead"

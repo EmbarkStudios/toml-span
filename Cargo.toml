@@ -3,7 +3,7 @@ resolver = "2"
 members = ["integ-tests", "toml-file", "toml-file-derive"]
 
 [workspace.dependencies]
-toml-file = { path = "toml-file" }
+toml-span = { path = "toml-span" }
 proc-macro2 = "1.0"
 quote = "1.0"
 syn = "2.0"

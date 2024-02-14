@@ -37,12 +37,16 @@ where
 pub struct TableHelper<'de> {
     pub table: Table<'de>,
     pub errors: Vec<Error>,
+    expected: Vec<&'static str>,
+    span: Span,
 }
 
-impl<'de> From<Table<'de>> for TableHelper<'de> {
-    fn from(table: Table<'de>) -> Self {
+impl<'de> From<(Table<'de>, Span)> for TableHelper<'de> {
+    fn from((table, span): (Table<'de>, Span)) -> Self {
         Self {
             table,
+            span,
+            expected: Vec::new(),
             errors: Vec::new(),
         }
     }
@@ -58,6 +62,8 @@ impl<'de> TableHelper<'de> {
         Ok(Self {
             errors: Vec::new(),
             table,
+            expected: Vec::new(),
+            span: value.span,
         })
     }
 
@@ -80,10 +86,12 @@ impl<'de> TableHelper<'de> {
         &mut self,
         name: &'static str,
     ) -> Result<Spanned<T>, Error> {
+        self.expected.push(name);
+
         let Some(mut val) = self.table.remove(&name.into()) else {
             let missing = Error {
                 kind: ErrorKind::MissingField(name),
-                span: Default::default(),
+                span: self.span,
                 line_info: None,
             };
             self.errors.push(missing.clone());
@@ -102,6 +110,8 @@ impl<'de> TableHelper<'de> {
         name: &'static str,
         def: impl FnOnce() -> T,
     ) -> (T, Span) {
+        self.expected.push(name);
+
         let Some(mut val) = self.table.remove(&name.into()) else {
             return (def(), Span::default());
         };
@@ -120,6 +130,8 @@ impl<'de> TableHelper<'de> {
     }
 
     pub fn optional_s<T: Deserialize<'de>>(&mut self, name: &'static str) -> Option<Spanned<T>> {
+        self.expected.push(name);
+
         let Some(mut val) = self.table.remove(&name.into()) else {
             return None;
         };
@@ -138,10 +150,12 @@ impl<'de> TableHelper<'de> {
         T: FromStr<Err = E> + Default,
         E: Display,
     {
+        self.expected.push(name);
+
         let Some(mut val) = self.table.remove(&name.into()) else {
             self.errors.push(Error {
                 kind: ErrorKind::MissingField(name),
-                span: Default::default(),
+                span: self.span,
                 line_info: None,
             });
             return T::default();
@@ -161,6 +175,8 @@ impl<'de> TableHelper<'de> {
         T: FromStr<Err = E>,
         E: Display,
     {
+        self.expected.push(name);
+
         let Some(mut val) = self.table.remove(&name.into()) else {
             return None;
         };
@@ -185,8 +201,11 @@ impl<'de> TableHelper<'de> {
                 .collect();
 
             self.errors.push(Error {
-                span: Default::default(),
-                kind: ErrorKind::UnexpectedKeys { keys },
+                span: self.span,
+                kind: ErrorKind::UnexpectedKeys {
+                    keys,
+                    expected: self.expected.into_iter().map(String::from).collect(),
+                },
                 line_info: None,
             })
         }
