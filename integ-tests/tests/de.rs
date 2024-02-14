@@ -29,6 +29,11 @@ impl<'de> Deserialize<'de> for Boop {
 
 valid_de!(basic_table, Boop, "s = 'boop string'\nos = 20");
 invalid_de!(missing_required, Boop, "os = 20");
+invalid_de!(
+    unknown_field,
+    Boop,
+    "s = 'val'\nthis-field-is-not-known = 20"
+);
 
 #[derive(Debug)]
 struct Package {
@@ -53,7 +58,7 @@ impl<'de> Deserialize<'de> for Package {
                 Ok(Self { name, version })
             }
             ValueInner::Table(tab) => {
-                let mut th = TableHelper::from(tab);
+                let mut th = TableHelper::from((tab, value.span));
 
                 if let Some(mut val) = th.table.remove(&"crate".into()) {
                     let (name, version) = match val.take() {
