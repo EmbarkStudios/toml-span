@@ -170,3 +170,25 @@ impl<'de> Deserialize<'de> for Flattened {
 }
 
 valid_de!(flattened, Flattened);
+
+/// Just validates the Value::pointer/_mut methods work as expected
+#[test]
+fn pointers() {
+    let mut ba = toml_span::parse(include_str!("../data/basic_arrays.toml")).unwrap();
+
+    assert_eq!(
+        ba.pointer("/packages/2/version").unwrap().as_str().unwrap(),
+        "3.0.0"
+    );
+
+    assert_eq!(
+        ba.pointer_mut("/packages/3/crate")
+            .unwrap()
+            .take()
+            .as_str()
+            .unwrap(),
+        "fourth:0.1"
+    );
+
+    assert!(dbg!(ba.pointer("/packages/3/crate")).is_none());
+}

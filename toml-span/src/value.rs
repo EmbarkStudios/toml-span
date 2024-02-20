@@ -70,6 +70,91 @@ impl<'de> Value<'de> {
             }),
         }
     }
+
+    #[inline]
+    pub fn as_str(&self) -> Option<&str> {
+        self.value.as_ref().and_then(|v| v.as_str())
+    }
+
+    #[inline]
+    pub fn as_table(&self) -> Option<&Table<'de>> {
+        self.value.as_ref().and_then(|v| v.as_table())
+    }
+
+    #[inline]
+    pub fn as_array(&self) -> Option<&Array<'de>> {
+        self.value.as_ref().and_then(|v| v.as_array())
+    }
+
+    #[inline]
+    pub fn as_integer(&self) -> Option<i64> {
+        self.value.as_ref().and_then(|v| v.as_integer())
+    }
+
+    #[inline]
+    pub fn as_float(&self) -> Option<f64> {
+        self.value.as_ref().and_then(|v| v.as_float())
+    }
+
+    #[inline]
+    pub fn as_bool(&self) -> Option<bool> {
+        self.value.as_ref().and_then(|v| v.as_bool())
+    }
+
+    pub fn pointer(&self, pointer: &'de str) -> Option<&Self> {
+        if pointer.is_empty() {
+            return Some(self);
+        } else if !pointer.starts_with('/') {
+            return None;
+        }
+
+        pointer
+            .split('/')
+            .skip(1)
+            // Don't support / or ~ in key names unless someone actually opens
+            // an issue about it
+            //.map(|x| x.replace("~1", "/").replace("~0", "~"))
+            .try_fold(self, |target, token| {
+                (match &target.value {
+                    Some(ValueInner::Table(tab)) => tab.get(&token.into()),
+                    Some(ValueInner::Array(list)) => parse_index(token).and_then(|x| list.get(x)),
+                    _ => None,
+                })
+                .filter(|v| v.value.is_some())
+            })
+    }
+
+    pub fn pointer_mut(&mut self, pointer: &'de str) -> Option<&mut Self> {
+        if pointer.is_empty() {
+            return Some(self);
+        } else if !pointer.starts_with('/') {
+            return None;
+        }
+
+        pointer
+            .split('/')
+            .skip(1)
+            // Don't support / or ~ in key names unless someone actually opens
+            // an issue about it
+            //.map(|x| x.replace("~1", "/").replace("~0", "~"))
+            .try_fold(self, |target, token| {
+                (match &mut target.value {
+                    Some(ValueInner::Table(tab)) => tab.get_mut(&token.into()),
+                    Some(ValueInner::Array(list)) => {
+                        parse_index(token).and_then(|x| list.get_mut(x))
+                    }
+                    _ => None,
+                })
+                .filter(|v| v.value.is_some())
+            })
+    }
+}
+
+fn parse_index(s: &str) -> Option<usize> {
+    if s.starts_with('+') || (s.starts_with('0') && s.len() != 1) {
+        return None;
+    }
+    s.parse().ok()
 }
 
 impl<'de> AsRef<ValueInner<'de>> for Value<'de> {
@@ -149,6 +234,60 @@ impl<'de> ValueInner<'de> {
             Self::Boolean(..) => "boolean",
             Self::Array(..) => "array",
             Self::Table(..) => "table",
+        }
+    }
+
+    #[inline]
+    pub fn as_str(&self) -> Option<&str> {
+        if let Self::String(s) = self {
+            Some(s.as_ref())
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    pub fn as_table(&self) -> Option<&Table<'de>> {
+        if let ValueInner::Table(t) = self {
+            Some(t)
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    pub fn as_array(&self) -> Option<&Array<'de>> {
+        if let ValueInner::Array(a) = self {
+            Some(a)
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    pub fn as_integer(&self) -> Option<i64> {
+        if let ValueInner::Integer(i) = self {
+            Some(*i)
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    pub fn as_float(&self) -> Option<f64> {
+        if let ValueInner::Float(f) = self {
+            Some(*f)
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    pub fn as_bool(&self) -> Option<bool> {
+        if let ValueInner::Boolean(b) = self {
+            Some(*b)
+        } else {
+            None
         }
     }
 }

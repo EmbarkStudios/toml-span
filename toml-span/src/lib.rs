@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 pub mod de;
 pub mod de_helpers;
 mod error;
