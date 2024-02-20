@@ -34,7 +34,6 @@ pub enum Error {
     NewlineInString(usize),
     Unexpected(usize, char),
     UnterminatedString(usize),
-    NewlineInTableKey(usize),
     MultilineStringKey(usize, usize),
     Wanted {
         at: usize,
@@ -73,7 +72,7 @@ impl<'a> Tokenizer<'a> {
         t
     }
 
-    pub fn next(&mut self) -> Result<Option<(Span, Token<'a>)>, Error> {
+    pub fn step(&mut self) -> Result<Option<(Span, Token<'a>)>, Error> {
         let (start, token) = match self.one() {
             Some((start, '\n')) => (start, Token::Newline),
             Some((start, ' ' | '\t')) => (start, self.whitespace_token(start)),
@@ -99,7 +98,7 @@ impl<'a> Tokenizer<'a> {
     }
 
     pub fn peek(&mut self) -> Result<Option<(Span, Token<'a>)>, Error> {
-        self.clone().next()
+        self.clone().step()
     }
 
     pub fn eat(&mut self, expected: Token<'a>) -> Result<bool, Error> {
@@ -113,7 +112,7 @@ impl<'a> Tokenizer<'a> {
             Some(_) | None => return Ok(None),
         };
 
-        drop(self.next());
+        drop(self.step());
         Ok(Some(span))
     }
 
@@ -126,7 +125,7 @@ impl<'a> Tokenizer<'a> {
     /// Expect the given token returning its span.
     pub fn expect_spanned(&mut self, expected: Token<'a>) -> Result<Span, Error> {
         let current = self.current();
-        match self.next()? {
+        match self.step()? {
             Some((span, found)) => {
                 if expected == found {
                     Ok(span)
@@ -148,7 +147,7 @@ impl<'a> Tokenizer<'a> {
 
     pub fn table_key(&mut self) -> Result<Key<'a>, Error> {
         let current = self.current();
-        match self.next()? {
+        match self.step()? {
             Some((span, Token::Keylike(k))) => Ok(Key {
                 span,
                 name: k.into(),
@@ -168,7 +167,8 @@ impl<'a> Tokenizer<'a> {
                 }
                 match src.find('\n') {
                     None => Ok(Key { span, name: val }),
-                    Some(i) => Err(Error::NewlineInTableKey(offset + i)),
+                    // This is not reachable
+                    Some(i) => Err(Error::InvalidCharInString(i, '\n')),
                 }
             }
             Some((_, other)) => Err(Error::Wanted {
@@ -200,7 +200,7 @@ impl<'a> Tokenizer<'a> {
 
     pub fn eat_newline_or_eof(&mut self) -> Result<(), Error> {
         let current = self.current();
-        match self.next()? {
+        match self.step()? {
             None | Some((_, Token::Newline)) => Ok(()),
             Some((_, other)) => Err(Error::Wanted {
                 at: current,
@@ -245,7 +245,7 @@ impl<'a> Tokenizer<'a> {
 
     fn comment_token(&mut self, start: usize) -> Token<'a> {
         while let Some((_, ch)) = self.chars.clone().next() {
-            if ch != '\t' && (ch < '\u{20}' || ch > '\u{10ffff}') {
+            if ch != '\t' && !('\u{20}'..='\u{10ffff}').contains(&ch) {
                 break;
             }
             self.one();
@@ -258,6 +258,7 @@ impl<'a> Tokenizer<'a> {
     /// string and its span they won't know the actual begin/end which can
     /// be needed for doing substring indices (eg reporting error messages
     /// when parsing a string)
+    #[allow(clippy::type_complexity)]
     fn read_string(
         &mut self,
         delim: char,
@@ -359,7 +360,7 @@ impl<'a> Tokenizer<'a> {
 
     fn literal_string(&mut self, start: usize) -> Result<(Span, Token<'a>), Error> {
         self.read_string('\'', start, &mut |_me, val, _multi, i, ch| {
-            if ch == '\u{09}' || ('\u{20}' <= ch && ch <= '\u{10ffff}' && ch != '\u{7f}') {
+            if ch == '\u{09}' || (ch != '\u{7f}' && ('\u{20}'..='\u{10ffff}').contains(&ch)) {
                 val.push(ch);
                 Ok(())
             } else {
@@ -418,7 +419,7 @@ impl<'a> Tokenizer<'a> {
                 }
                 Ok(())
             }
-            ch if ch == '\u{09}' || ('\u{20}' <= ch && ch <= '\u{10ffff}' && ch != '\u{7f}') => {
+            ch if ch == '\u{09}' || (ch != '\u{7f}' && ('\u{20}'..='\u{10ffff}').contains(&ch)) => {
                 val.push(ch);
                 Ok(())
             }
@@ -428,9 +429,9 @@ impl<'a> Tokenizer<'a> {
 
     fn hex<const N: usize>(&mut self, start: usize, i: usize) -> Result<char, Error> {
         let mut buf = [0; N];
-        for i in 0..N {
+        for b in buf.iter_mut() {
             match self.one() {
-                Some((_, ch)) if ch as u32 <= 0x7F && ch.is_ascii_hexdigit() => buf[i] = ch as u8,
+                Some((_, ch)) if ch as u32 <= 0x7F && ch.is_ascii_hexdigit() => *b = ch as u8,
                 Some((i, ch)) => return Err(Error::InvalidHexEscape(i, ch)),
                 None => return Err(Error::UnterminatedString(start)),
             }
@@ -522,12 +523,9 @@ impl MaybeString {
     }
 }
 
+#[inline]
 fn is_keylike(ch: char) -> bool {
-    ('A' <= ch && ch <= 'Z')
-        || ('a' <= ch && ch <= 'z')
-        || ('0' <= ch && ch <= '9')
-        || ch == '-'
-        || ch == '_'
+    ch.is_ascii_alphanumeric() || ch == '-' || ch == '_'
 }
 
 impl<'a> Token<'a> {

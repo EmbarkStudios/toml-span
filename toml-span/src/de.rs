@@ -65,19 +65,6 @@ impl<'de, 'b> Ctx<'de, 'b> {
     }
 }
 
-macro_rules! printc {
-    ($c:expr, $($arg:tt)*) => {{
-        // let ctx = $c;
-        // for _ in 0..ctx.depth {
-        //     eprint!(" ");
-        // }
-
-        // eprint!("{}:{} {}:{} ", file!(), line!(), ctx.cur_parent, ctx.cur);
-
-        // eprintln!($($arg)*);
-    }};
-}
-
 fn deserialize_table<'de, 'b>(
     mut ctx: Ctx<'de, 'b>,
     tables: &'b mut [Table<'de>],
@@ -86,7 +73,6 @@ fn deserialize_table<'de, 'b>(
     while ctx.cur_parent < ctx.max && ctx.cur < ctx.max {
         if let Some(values) = ctx.values.take() {
             for (key, val) in values {
-                printc!(&ctx, "{} => {val:?}", key.name);
                 table_insert(table, key, val, ctx.de)?;
             }
         }
@@ -115,7 +101,6 @@ fn deserialize_table<'de, 'b>(
         };
 
         ctx.cur = pos;
-        printc!(&ctx, "next table");
 
         // Test to see if we're duplicating our parent's table, and if so
         // then this is an error in the toml format
@@ -158,7 +143,6 @@ fn deserialize_table<'de, 'b>(
         // decoding.
         if ctx.depth != ttable.header.len() {
             let key = ttable.header[ctx.depth].clone();
-            printc!(&ctx, "need next table '{}'", key.name);
             if let Some((k, _)) = table.get_key_value(&key) {
                 return Err(ctx.error(
                     key.span.start,
@@ -172,7 +156,6 @@ fn deserialize_table<'de, 'b>(
 
             let array = ttable.array && ctx.depth == ttable.header.len() - 1;
             ctx.cur += 1;
-            printc!(&ctx, "before");
 
             let cctx = Ctx {
                 depth: ctx.depth + if array { 0 } else { 1 },
@@ -207,11 +190,9 @@ fn deserialize_table<'de, 'b>(
             return Err(ctx.error(ttable.at, Some(ttable.end), ErrorKind::RedefineAsArray));
         }
 
-        printc!(&ctx, "taking values");
         ctx.values = ttable.values.take();
     }
 
-    printc!(&ctx, "done");
     Ok(ctx.cur_parent)
 }
 
@@ -300,8 +281,6 @@ fn deserialize_array<'de, 'b>(
             })
             .unwrap_or(ctx.max);
 
-        printc!(&ctx, "array enter");
-
         let actx = Ctx {
             values: Some(
                 tables[ctx.cur_parent]
@@ -323,7 +302,6 @@ fn deserialize_array<'de, 'b>(
         arr.push(Value::new(ValueInner::Table(table)));
 
         ctx.cur_parent = next;
-        printc!(&ctx, "array advance");
     }
 
     Ok(ctx.cur_parent)
@@ -433,11 +411,8 @@ impl<'a> Deserializer<'a> {
                         values: Some(Vec::new()),
                         array,
                     };
-                    loop {
-                        match header.next().map_err(|e| self.token_error(e))? {
-                            Some(part) => cur_table.header.push(part),
-                            None => break,
-                        }
+                    while let Some(part) = header.next().map_err(|e| self.token_error(e))? {
+                        cur_table.header.push(part);
                     }
                 }
                 Line::KeyValue(key, value) => {
@@ -859,8 +834,12 @@ impl<'a> Deserializer<'a> {
             )) => {
                 return self.add_dotted_key(key_parts, value, v);
             }
-            Some(&mut (_, Val { start, end, .. })) => {
-                return Err(self.error(start, Some(end), ErrorKind::DottedKeyInvalidType));
+            Some(&mut (ref first, _)) => {
+                return Err(self.error(
+                    key.span.start,
+                    Some(value.end),
+                    ErrorKind::DottedKeyInvalidType { first: first.span },
+                ));
             }
             None => {}
         }
@@ -922,7 +901,7 @@ impl<'a> Deserializer<'a> {
     }
 
     fn next(&mut self) -> Result<Option<(Span, Token<'a>)>, Error> {
-        self.tokens.next().map_err(|e| self.token_error(e))
+        self.tokens.step().map_err(|e| self.token_error(e))
     }
 
     fn peek(&mut self) -> Result<Option<(Span, Token<'a>)>, Error> {
@@ -952,7 +931,6 @@ impl<'a> Deserializer<'a> {
             TokenError::UnterminatedString(at) => {
                 self.error(at, None, ErrorKind::UnterminatedString)
             }
-            TokenError::NewlineInTableKey(at) => self.error(at, None, ErrorKind::NewlineInTableKey),
             TokenError::Wanted {
                 at,
                 expected,

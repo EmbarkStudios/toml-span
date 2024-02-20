@@ -36,6 +36,18 @@ bar = \"\"\"\\\r\n   \r\n   \r\n   a\"\"\""
 invalid!(newline_string, "a = \"\n\"");
 invalid!(newline_literal, "a = '\n'");
 valid!(key_names);
+// Ensures that a table with an array cannot then be followed by an array of the
+// same name
+invalid!(
+    table_array_implicit,
+    r#"
+[[albums.songs]]
+name = "Glory Days"
+
+[[albums]]
+name = "Born in the USA"
+"#
+);
 
 mod stray_cr {
     use super::invalid;
@@ -81,11 +93,13 @@ mod bad_keys {
     invalid!(none, "=3");
     invalid!(empty_pipe, "\"\"|=3");
     invalid!(newline2, "\"\n\"|=3");
+    invalid!(newline3, "\"something\nsomething else\"=3");
     invalid!(cr, "\"\r\"|=3");
     invalid!(mutli_line, "''''''=3");
     invalid!(multi_line2, r#"""""""=3"#);
     invalid!(multi_line3, "'''key'''=3");
     invalid!(multi_line4, r#""""key"""=3"#);
+    invalid!(dotted, "a = 1\na.b = 2");
 }
 
 valid!(table_names);
@@ -115,6 +129,7 @@ invalid!(integer_range_negative, "a = -9223372036854775809");
 invalid!(bare_number, "4");
 
 valid!(inline_tables);
+invalid!(eof, "key =");
 
 mod bad_inline_tables {
     use super::invalid;

@@ -27,7 +27,7 @@ where
     match s.parse() {
         Ok(v) => Ok(v),
         Err(err) => Err(Error {
-            kind: ErrorKind::Custom(format!("failed to parse string: {err}")),
+            kind: ErrorKind::Custom(format!("failed to parse string: {err}").into()),
             span: value.span,
             line_info: None,
         }),
@@ -200,14 +200,16 @@ impl<'de> TableHelper<'de> {
                 .map(|key| (key.name.into(), key.span))
                 .collect();
 
-            self.errors.push(Error {
-                span: self.span,
-                kind: ErrorKind::UnexpectedKeys {
-                    keys,
-                    expected: self.expected.into_iter().map(String::from).collect(),
-                },
-                line_info: None,
-            })
+            self.errors.push(
+                (
+                    ErrorKind::UnexpectedKeys {
+                        keys,
+                        expected: self.expected.into_iter().map(String::from).collect(),
+                    },
+                    self.span,
+                )
+                    .into(),
+            );
         }
 
         if self.errors.is_empty() {
@@ -252,7 +254,7 @@ macro_rules! integer {
                     ValueInner::Integer(i) => {
                         let i = i.try_into().map_err(|_| {
                             DeserError::from(Error {
-                                kind: ErrorKind::InvalidNumber,
+                                kind: ErrorKind::OutOfRange(stringify!($num)),
                                 span: value.span,
                                 line_info: None,
                             })

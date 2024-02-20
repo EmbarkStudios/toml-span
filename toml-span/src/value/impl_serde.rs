@@ -10,7 +10,7 @@ impl<'de> serde::Serialize for Value<'de> {
         S: serde::Serializer,
     {
         match self.as_ref() {
-            ValueInner::String(s) => ser.serialize_str(&s),
+            ValueInner::String(s) => ser.serialize_str(s),
             ValueInner::Integer(i) => ser.serialize_i64(*i),
             ValueInner::Float(f) => ser.serialize_f64(*f),
             ValueInner::Boolean(b) => ser.serialize_bool(*b),

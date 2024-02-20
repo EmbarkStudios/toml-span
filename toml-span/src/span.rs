@@ -110,7 +110,7 @@ where
     fn clone(&self) -> Self {
         Self {
             value: self.value.clone(),
-            span: self.span.clone(),
+            span: self.span,
         }
     }
 }

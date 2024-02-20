@@ -49,11 +49,12 @@ pub enum ErrorKind {
     /// EOF mark.
     UnterminatedString,
 
-    /// A newline was found in a table key.
-    NewlineInTableKey,
-
     /// A number failed to parse.
     InvalidNumber,
+
+    /// The number in the toml file cannot be losslessly converted to the specified
+    /// number type
+    OutOfRange(&'static str),
 
     /// Wanted one sort of token, but found another.
     Wanted {
@@ -82,26 +83,10 @@ pub enum ErrorKind {
 
     /// A custom error which could be generated when deserializing a particular
     /// type.
-    Custom(String),
-
-    /// A tuple with a certain number of elements was expected but something
-    /// else was found.
-    ExpectedTuple(usize),
-
-    /// Expected table keys to be in increasing tuple index order, but something
-    /// else was found.
-    ExpectedTupleIndex {
-        /// Expected index.
-        expected: usize,
-        /// Key that was specified.
-        found: String,
-    },
-
-    /// An empty table was expected but entries were found.
-    ExpectedEmptyTable,
+    Custom(std::borrow::Cow<'static, str>),
 
     /// Dotted key attempted to extend something that is not a table.
-    DottedKeyInvalidType,
+    DottedKeyInvalidType { first: Span },
 
     /// An unexpected key was encountered.
     ///
@@ -133,12 +118,9 @@ impl Display for ErrorKind {
         match self {
             Self::UnexpectedEof => f.write_str("unexpected-eof"),
             Self::Custom(..) => f.write_str("custom"),
-            Self::DottedKeyInvalidType => f.write_str("dotted-key-invalid-type"),
+            Self::DottedKeyInvalidType { .. } => f.write_str("dotted-key-invalid-type"),
             Self::DuplicateKey { .. } => f.write_str("duplicate-key"),
             Self::DuplicateTable { .. } => f.write_str("duplicate-table"),
-            Self::ExpectedEmptyTable => f.write_str("expected-empty-table"),
-            Self::ExpectedTuple(..) => f.write_str("expected-tuple"),
-            Self::ExpectedTupleIndex { .. } => f.write_str("expected-tuple-index"),
             Self::UnexpectedKeys { .. } => f.write_str("unexpected-keys"),
             Self::UnquotedString => f.write_str("unquoted-string"),
             Self::MultilineStringKey => f.write_str("multiline-string-key"),
@@ -147,11 +129,10 @@ impl Display for ErrorKind {
             Self::InvalidEscape(..) => f.write_str("invalid-escape"),
             Self::InvalidEscapeValue(..) => f.write_str("invalid-escape-value"),
             Self::InvalidHexEscape(..) => f.write_str("invalid-hex-escape"),
-            //Self::NewlineInString => f.write_str("newline-in-string"),
             Self::Unexpected(..) => f.write_str("unexpected"),
             Self::UnterminatedString => f.write_str("unterminated-string"),
-            Self::NewlineInTableKey => f.write_str("newline-in-table-key"),
             Self::InvalidNumber => f.write_str("invalid-number"),
+            Self::OutOfRange(_) => f.write_str("out-of-range"),
             Self::Wanted { .. } => f.write_str("wanted"),
             Self::MissingField(..) => f.write_str("missing-field"),
             Self::Deprecated { .. } => f.write_str("deprecated"),
@@ -182,10 +163,10 @@ impl Display for Error {
         match &self.kind {
             ErrorKind::UnexpectedEof => f.write_str("unexpected eof encountered")?,
             ErrorKind::InvalidCharInString(c) => {
-                write!(f, "invalid character in string: `{}`", Escape(*c))?
+                write!(f, "invalid character in string: `{}`", Escape(*c))?;
             }
             ErrorKind::InvalidEscape(c) => {
-                write!(f, "invalid escape character in string: `{}`", Escape(*c))?
+                write!(f, "invalid escape character in string: `{}`", Escape(*c))?;
             }
             ErrorKind::InvalidHexEscape(c) => write!(
                 f,
@@ -195,11 +176,11 @@ impl Display for Error {
             ErrorKind::InvalidEscapeValue(c) => write!(f, "invalid escape value: `{c}`")?,
             ErrorKind::Unexpected(c) => write!(f, "unexpected character found: `{}`", Escape(*c))?,
             ErrorKind::UnterminatedString => f.write_str("unterminated string")?,
-            ErrorKind::NewlineInTableKey => f.write_str("found newline in table key")?,
             ErrorKind::Wanted { expected, found } => {
                 write!(f, "expected {expected}, found {found}")?;
             }
             ErrorKind::InvalidNumber => f.write_str("invalid number")?,
+            ErrorKind::OutOfRange(kind) => write!(f, "out of range of '{kind}'")?,
             ErrorKind::DuplicateTable { name, .. } => {
                 write!(f, "redefinition of table `{name}`")?;
             }
@@ -208,15 +189,10 @@ impl Display for Error {
             }
             ErrorKind::RedefineAsArray => f.write_str("table redefined as array")?,
             ErrorKind::MultilineStringKey => {
-                f.write_str("multiline strings are not allowed for key")?
+                f.write_str("multiline strings are not allowed for key")?;
             }
             ErrorKind::Custom(message) => f.write_str(message)?,
-            ErrorKind::ExpectedTuple(l) => write!(f, "expected table with length {l}")?,
-            ErrorKind::ExpectedTupleIndex { expected, found } => {
-                write!(f, "expected table key `{expected}`, but was `{found}`")?
-            }
-            ErrorKind::ExpectedEmptyTable => f.write_str("expected empty table")?,
-            ErrorKind::DottedKeyInvalidType => {
+            ErrorKind::DottedKeyInvalidType { .. } => {
                 f.write_str("dotted key attempted to extend non-table type")?;
             }
             ErrorKind::UnexpectedKeys { keys, expected } => write!(
@@ -224,11 +200,11 @@ impl Display for Error {
                 "unexpected keys in table: `{keys:?}`\nexpected: {expected:?}"
             )?,
             ErrorKind::UnquotedString => {
-                f.write_str("invalid TOML value, did you mean to use a quoted string?")?
+                f.write_str("invalid TOML value, did you mean to use a quoted string?")?;
             }
             ErrorKind::MissingField(field) => write!(f, "missing field '{field}' in table")?,
             ErrorKind::Deprecated { old, new } => {
-                write!(f, "field '{old}' is deprecated, '{new}' has replaced it")?
+                write!(f, "field '{old}' is deprecated, '{new}' has replaced it")?;
             }
             ErrorKind::UnexpectedValue { expected } => write!(f, "expected '{expected:?}'")?,
         }
@@ -286,6 +262,9 @@ impl Error {
             ErrorKind::InvalidNumber => diag.with_labels(vec![
                 Label::primary(fid, self.span).with_message("unable to parse number")
             ]),
+            ErrorKind::OutOfRange(kind) => diag
+                .with_message(format!("number is out of range of '{kind}'"))
+                .with_labels(vec![Label::primary(fid, self.span)]),
             ErrorKind::Wanted { expected, .. } => diag
                 .with_labels(vec![
                     Label::primary(fid, self.span).with_message(format!("expected {expected}"))
@@ -333,7 +312,21 @@ impl Error {
                 .with_labels(vec![
                     Label::primary(fid, self.span).with_message("unexpected value")
                 ]),
-            kind => unimplemented!("{kind}"),
+            ErrorKind::UnexpectedEof => diag
+                .with_message("unexpected end of file")
+                .with_labels(vec![Label::primary(fid, self.span)]),
+            ErrorKind::DottedKeyInvalidType { first } => {
+                diag.with_message(self.to_string()).with_labels(vec![
+                    Label::primary(fid, self.span).with_message("attempted to extend table here"),
+                    Label::secondary(fid, *first).with_message("non-table"),
+                ])
+            }
+            ErrorKind::RedefineAsArray => diag
+                .with_message(self.to_string())
+                .with_labels(vec![Label::primary(fid, self.span)]),
+            ErrorKind::Custom(msg) => diag
+                .with_message(msg.to_string())
+                .with_labels(vec![Label::primary(fid, self.span)]),
         };
 
         diag

@@ -128,7 +128,7 @@ macro_rules! invalid_de {
 pub type File<'s> = codespan_reporting::files::SimpleFile<&'static str, &'s str>;
 
 pub fn emit_diags(
-    f: &File,
+    f: &File<'_>,
     error: impl IntoIterator<Item = codespan_reporting::diagnostic::Diagnostic<()>>,
 ) -> String {
     let mut output = codespan_reporting::term::termcolor::NoColor::new(Vec::new());

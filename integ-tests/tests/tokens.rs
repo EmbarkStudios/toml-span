@@ -4,16 +4,16 @@ use toml_span::tokens::{Error, Token, Tokenizer};
 
 fn err(input: &str, err: Error) {
     let mut t = Tokenizer::new(input);
-    let token = t.next().unwrap_err();
+    let token = t.step().unwrap_err();
     assert_eq!(token, err);
-    assert!(t.next().unwrap().is_none());
+    assert!(t.step().unwrap().is_none());
 }
 
 #[test]
 fn strings() {
     fn t(input: &str, eval: &str, emultiline: bool) {
         let mut t = Tokenizer::new(input);
-        let (_, token) = t.next().unwrap().unwrap();
+        let (_, token) = t.step().unwrap().unwrap();
 
         if let Token::String {
             src,
@@ -28,7 +28,7 @@ fn strings() {
         } else {
             panic!("not a string");
         }
-        assert!(t.next().unwrap().is_none());
+        assert!(t.step().unwrap().is_none());
     }
 
     // Literal strings
@@ -87,9 +87,9 @@ fn strings() {
 fn keylike() {
     fn t(input: &str) {
         let mut t = Tokenizer::new(input);
-        let (_, token) = t.next().unwrap().unwrap();
+        let (_, token) = t.step().unwrap().unwrap();
         assert_eq!(token, Token::Keylike(input));
-        assert!(t.next().unwrap().is_none());
+        assert!(t.step().unwrap().is_none());
     }
     t("foo");
     t("0bar");
@@ -103,10 +103,10 @@ fn keylike() {
 
 #[test]
 fn all() {
-    fn t(input: &str, expected: &[((usize, usize), Token, &str)]) {
+    fn t(input: &str, expected: &[((usize, usize), Token<'_>, &str)]) {
         let mut tokens = Tokenizer::new(input);
-        let mut actual: Vec<((usize, usize), Token, &str)> = Vec::new();
-        while let Some((span, token)) = tokens.next().unwrap() {
+        let mut actual: Vec<((usize, usize), Token<'_>, &str)> = Vec::new();
+        while let Some((span, token)) = tokens.step().unwrap() {
             actual.push((span.into(), token, &input[span.start..span.end]));
         }
         for (a, b) in actual.iter().zip(expected) {
@@ -168,7 +168,7 @@ fn bare_cr_bad() {
 #[test]
 fn bad_comment() {
     let mut t = Tokenizer::new("#\u{0}");
-    t.next().unwrap().unwrap();
-    assert_eq!(t.next(), Err(Error::Unexpected(1, '\u{0}')));
-    assert!(t.next().unwrap().is_none());
+    t.step().unwrap().unwrap();
+    assert_eq!(t.step(), Err(Error::Unexpected(1, '\u{0}')));
+    assert!(t.step().unwrap().is_none());
 }

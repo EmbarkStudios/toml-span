@@ -171,7 +171,7 @@ impl<'de> Deserialize<'de> for Flattened {
 
 valid_de!(flattened, Flattened);
 
-/// Just validates the Value::pointer/_mut methods work as expected
+/// Validates the `Value::pointer/_mut` methods work as expected
 #[test]
 fn pointers() {
     let mut ba = toml_span::parse(include_str!("../data/basic_arrays.toml")).unwrap();
@@ -190,5 +190,38 @@ fn pointers() {
         "fourth:0.1"
     );
 
-    assert!(dbg!(ba.pointer("/packages/3/crate")).is_none());
+    assert!(ba.pointer("/packages/3/crate").is_none());
 }
+
+#[derive(Debug)]
+struct Ohno {
+    year: u8,
+}
+
+impl<'de> Deserialize<'de> for Ohno {
+    fn deserialize(value: &mut Value<'de>) -> Result<Self, DeserError> {
+        let mut th = TableHelper::new(value)?;
+        let year = th.required("year").ok();
+
+        if let Some(snbh) = th.optional_s::<std::borrow::Cow<'de, str>>("this-is-deprecated") {
+            th.errors.push(
+                (
+                    toml_span::ErrorKind::Custom("this-is-deprecated is deprecated".into()),
+                    snbh.span,
+                )
+                    .into(),
+            );
+        }
+
+        th.finalize(Some(value))?;
+        Ok(Self {
+            year: year.unwrap(),
+        })
+    }
+}
+
+invalid_de!(
+    custom_error,
+    Ohno,
+    "year = 40_000\nthis-is-deprecated = 'this should not be here'"
+);
