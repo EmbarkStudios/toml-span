@@ -1,0 +1,11 @@
+---
+source: integ-tests/tests/parser.rs
+expression: error
+---
+error[unquoted-string]: 
+  ┌─ true_trailing:1:7
+  │
+1 │ foo = true2
+  │       ^^^^^ string is not quoted
+
+

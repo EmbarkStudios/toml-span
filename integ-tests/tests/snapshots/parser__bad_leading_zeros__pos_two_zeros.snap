@@ -1,0 +1,11 @@
+---
+source: integ-tests/tests/parser.rs
+expression: error
+---
+error[invalid-number]: 
+  ┌─ pos_two_zeros:1:7
+  │
+1 │ a = +00
+  │       ^ unable to parse number
+
+

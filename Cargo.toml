@@ -1,0 +1,21 @@
+[workspace]
+resolver = "2"
+members = ["integ-tests", "toml-span"]
+
+[workspace.package]
+authors = ["Embark <opensource@embark-studios.com>"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/EmbarkStudios/toml-span"
+
+[workspace.dependencies]
+toml-span = { path = "toml-span" }
+proc-macro2 = "1.0"
+quote = "1.0"
+syn = "2.0"
+
+[profile.dev.package.insta]
+opt-level = 3
+
+[profile.dev.package.similar]
+opt-level = 3

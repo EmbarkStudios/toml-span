@@ -1,0 +1,14 @@
+targets = [
+    { triple = "x86_64-unknown-linux" },
+    { triple = "x86_64-unknown-musl" },
+    { triple = "x86_64-apple-darwin" },
+    { triple = "aarch64-apple-darwin" },
+    { triple = "x86_64-pc-windows-msvc" },
+]
+all-features = true
+
+[bans]
+multiple-versions = "deny"
+
+[licenses]
+allow = ["MIT", "Apache-2.0"]

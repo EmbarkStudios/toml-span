@@ -1,0 +1,8 @@
+---
+source: integ-tests/tests/parser.rs
+expression: valid_toml
+---
+{
+  "false": false,
+  "true": true
+}

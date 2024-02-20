@@ -1,0 +1,11 @@
+---
+source: integ-tests/tests/parser.rs
+expression: error
+---
+error[invalid-number]: 
+  ┌─ trailing_exp:1:7
+  │
+1 │ a = 0.e
+  │       ^ unable to parse number
+
+

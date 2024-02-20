@@ -1,0 +1,19 @@
+---
+source: integ-tests/tests/parser.rs
+expression: spans
+---
+note[table]: root_foo
+  ┌─ empty_table:1:1
+  │
+1 │ 
+  │ ^
+
+note[table]: root
+  ┌─ empty_table:1:1
+  │  
+1 │ ╭ 
+2 │ │ [foo]
+3 │ │ 
+  │ ╰^
+
+

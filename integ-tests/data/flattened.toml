@@ -1,0 +1,7 @@
+flattened = [
+    "simple",
+    { crate = "single:0.2.0" },
+    { name = "split", version = ">=0.2" },
+    { name = "split2" },
+    { crate = "single2", reason = "additional data" },
+]

@@ -1,0 +1,47 @@
+---
+source: integ-tests/tests/parser.rs
+expression: spans
+---
+note[table]: root_foo_0_bar
+  ┌─ tables_in_arrays:1:1
+  │
+1 │ [[foo]]
+  │ ^
+
+note[table]: root_foo_0
+  ┌─ tables_in_arrays:1:1
+  │
+1 │ [[foo]]
+  │ ^
+
+note[table]: root_foo_1_bar
+  ┌─ tables_in_arrays:1:1
+  │
+1 │ [[foo]]
+  │ ^
+
+note[table]: root_foo_1
+  ┌─ tables_in_arrays:1:1
+  │
+1 │ [[foo]]
+  │ ^
+
+note[array]: root_foo
+  ┌─ tables_in_arrays:1:1
+  │
+1 │ [[foo]]
+  │ ^
+
+note[table]: root
+   ┌─ tables_in_arrays:1:1
+   │  
+ 1 │ ╭ [[foo]]
+ 2 │ │ #…
+ 3 │ │ [foo.bar]
+ 4 │ │ #…
+   · │
+ 9 │ │ #...
+10 │ │ 
+   │ ╰^
+
+

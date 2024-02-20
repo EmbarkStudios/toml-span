@@ -1,0 +1,11 @@
+---
+source: integ-tests/tests/parser.rs
+expression: error
+---
+error[unquoted-string]: 
+  ┌─ leading_t:1:7
+  │
+1 │ foo = t2
+  │       ^^ string is not quoted
+
+
