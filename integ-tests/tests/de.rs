@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use integ_tests::{invalid_de, valid_de};
-use toml_file::{
+use toml_span::{
     de_helpers::*,
     span::Spanned,
     value::{Value, ValueInner},

@@ -3,15 +3,6 @@
 version = 3
 
 [[package]]
-name = "basic-toml"
-version = "0.1.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2db21524cad41c5591204d22d75e1970a2d1f71060214ca931dc7d5afe2c14e5"
-dependencies = [
- "serde",
-]
-
-[[package]]
 name = "codespan-reporting"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -82,11 +73,10 @@ dependencies = [
 name = "integ-tests"
 version = "0.1.0"
 dependencies = [
- "basic-toml",
  "codespan-reporting",
  "insta",
  "pretty_assertions",
- "toml-file",
+ "toml-span",
 ]
 
 [[package]]
@@ -197,22 +187,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "toml-file"
+name = "toml-span"
 version = "0.1.0"
 dependencies = [
  "codespan-reporting",
  "identconv",
  "serde",
  "smallvec",
-]
-
-[[package]]
-name = "toml-file-derive"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]

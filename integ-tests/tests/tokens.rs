@@ -1,6 +1,6 @@
 use pretty_assertions::assert_eq;
 use std::borrow::Cow;
-use toml_file::tokens::{Error, Token, Tokenizer};
+use toml_span::tokens::{Error, Token, Tokenizer};
 
 fn err(input: &str, err: Error) {
     let mut t = Tokenizer::new(input);

@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["integ-tests", "toml-file", "toml-file-derive"]
+members = ["integ-tests", "toml-span"]
 
 [workspace.dependencies]
 toml-span = { path = "toml-span" }
