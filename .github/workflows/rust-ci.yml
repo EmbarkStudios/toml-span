@@ -55,4 +55,4 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo fetch
       - name: cargo publish check
-        run: cargo publish --dry-run
+        run: cargo publish --dry-run -p toml-span
