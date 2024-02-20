@@ -10,9 +10,10 @@ pub mod value;
 pub use de::parse;
 pub use error::{DeserError, Error, ErrorKind};
 pub use span::Span;
+pub use value::Value;
 
 pub trait Deserialize<'de>: Sized {
-    fn deserialize(value: &mut value::Value<'de>) -> Result<Self, DeserError>;
+    fn deserialize(value: &mut Value<'de>) -> Result<Self, DeserError>;
 }
 
 pub trait DeserializeOwned: for<'de> Deserialize<'de> {}
