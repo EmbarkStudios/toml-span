@@ -74,6 +74,7 @@ impl<'de> TableHelper<'de> {
 
     #[inline]
     pub fn take(&mut self, name: &'static str) -> Option<(value::Key<'de>, Value<'de>)> {
+        self.expected.push(name);
         self.table.remove_entry(&name.into())
     }
 
