@@ -1,5 +1,5 @@
 <!-- Allow this file to not have a first line heading -->
-<!-- markdownlint-disable-file MD041 no-emphasis-as-heading -->
+<!-- markdownlint-disable-file MD041 no-emphasis-as-heading no-duplicate-heading -->
 
 <!-- inline html -->
 <!-- markdownlint-disable-file MD033 -->
