@@ -4,8 +4,13 @@ use std::fmt::{self, Debug, Display};
 /// Error that can occur when deserializing TOML.
 #[derive(Debug, Clone)]
 pub struct Error {
+    /// The error kind
     pub kind: ErrorKind,
+    /// The span where the error occurs.
+    ///
+    /// Note some [`ErrorKind`] contain additional span information
     pub span: Span,
+    /// Line and column information, only available for errors coming from the parser
     pub line_info: Option<(usize, usize)>,
 }
 
@@ -65,7 +70,12 @@ pub enum ErrorKind {
     },
 
     /// A duplicate table definition was found.
-    DuplicateTable { name: String, first: Span },
+    DuplicateTable {
+        /// The name of the duplicate table
+        name: String,
+        /// The span where the table was first defined
+        first: Span,
+    },
 
     /// Duplicate key in table.
     DuplicateKey {
@@ -86,7 +96,10 @@ pub enum ErrorKind {
     Custom(std::borrow::Cow<'static, str>),
 
     /// Dotted key attempted to extend something that is not a table.
-    DottedKeyInvalidType { first: Span },
+    DottedKeyInvalidType {
+        /// The span where the non-table value was defined
+        first: Span,
+    },
 
     /// An unexpected key was encountered.
     ///
@@ -94,6 +107,7 @@ pub enum ErrorKind {
     UnexpectedKeys {
         /// The unexpected keys.
         keys: Vec<(String, Span)>,
+        /// The list of keys that were expected for the table
         expected: Vec<String>,
     },
 
@@ -105,12 +119,17 @@ pub enum ErrorKind {
 
     /// A field in the table is deprecated and the new key should be used instead
     Deprecated {
+        /// The deprecated key name
         old: &'static str,
+        /// The key name that should be used instead
         new: &'static str,
     },
 
     /// An unexpected value was encountered
-    UnexpectedValue { expected: &'static [&'static str] },
+    UnexpectedValue {
+        /// The list of values that could have been used, eg. typically enum variants
+        expected: &'static [&'static str],
+    },
 }
 
 impl Display for ErrorKind {
@@ -229,7 +248,9 @@ impl Display for Error {
 }
 
 #[cfg(feature = "reporting")]
+#[cfg_attr(docsrs, doc(cfg(feature = "reporting")))]
 impl Error {
+    /// Converts this [`Error`] into a [`codespan_reporting::diagnostic::Diagnostic`]
     pub fn to_diagnostic<FileId: Copy + PartialEq>(
         &self,
         fid: FileId,
@@ -333,9 +354,20 @@ impl Error {
     }
 }
 
+/// When deserializing, it's possible to collect multiple errors instead of earlying
+/// out at the first error
 #[derive(Debug)]
 pub struct DeserError {
+    /// The set of errors that occurred during deserialization
     pub errors: Vec<Error>,
+}
+
+impl DeserError {
+    /// Merges errors from another [`Self`]
+    #[inline]
+    pub fn merge(&mut self, mut other: Self) {
+        self.errors.append(&mut other.errors);
+    }
 }
 
 impl std::error::Error for DeserError {}

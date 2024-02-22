@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 /// Loads a valid toml file and does a snapshot assertion against `toml`
 #[macro_export]
 macro_rules! valid {

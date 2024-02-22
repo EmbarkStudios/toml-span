@@ -32,7 +32,7 @@ First off I just want to be up front and clear about the differences/limitations
 
 This crate was specifically made to suit the needs of [cargo-deny], namely, that it can always retrieve the span of any toml item that it wants to. While the [toml](https://docs.rs/toml/latest/toml/) crate can also produce span information via [toml::Spanned](https://docs.rs/toml/latest/toml/struct.Spanned.html) there is one rather significant limitation, namely, that it must pass through [serde](https://docs.rs/serde/latest/serde/). While in simple cases the `Spanned` type works quite well, eg.
 
-```rust
+```rust,ignore
 #[derive(serde::Deserialize)]
 struct Simple {
     /// This works just fine
@@ -42,7 +42,7 @@ struct Simple {
 
 As soon as you have a [more complicated scenario](https://play.rust-lang.org/?version=nightly&mode=debug&edition=2021&gist=aeb611bbe387538d2ebb6780055b3167), the mechanism that `toml` uses to get the span information breaks down.
 
-```rust
+```rust,ignore
 #[derive(serde::Deserialize)]
 #[serde(untagged)]
 enum Ohno {
@@ -73,7 +73,7 @@ failed to deserialize toml: Error { inner: Error { inner: TomlError { message: "
 
 To understand why this fails we can look at what `#[derive(serde::Deserialize)]` expand to for `Ohno` in HIR.
 
-```rust
+```rust,ignore
 #[allow(unused_extern_crates, clippy :: useless_attribute)]
 extern crate serde as _serde;
 #[automatically_derived]
@@ -103,8 +103,8 @@ impl <'de> _serde::Deserialize<'de> for Ohno {
                                             _serde::Deserialize>::deserialize(__deserializer),
                                     Ohno::SpannedString) { return _serde::__private::Ok(__ok); }
                             _serde::__private::Err(_serde::de::Error::custom("data did not match any variant of untagged enum Ohno"))
-                        }
-                } };
+    }
+}
 ```
 
 What serde does in the untagged case is first deserialize into `_serde::__private::de::Content`, an internal API container that is easiest to think of as something like `serde_json::Value`. This is because serde speculatively parses each enum variant until one succeeds by passing a `ContentRefDeserializer` that just borrows the deserialized `Content` from earlier to satisfy the serde deserialize API consuming the `Deserializer`. The problem comes because of how [`toml::Spanned`](https://docs.rs/serde_spanned/0.6.5/src/serde_spanned/spanned.rs.html#161-212) works, namely that it uses a hack to workaround the limitations of the serde API in order to "deserialize" the item as well as its span information, by the `Spanned` object specifically requesting a set of keys from the `toml::Deserializer` impl so that it can [encode](https://github.com/toml-rs/toml/blob/c4b62fda23343037ebe5ea93db9393cb25fcf233/crates/toml_edit/src/de/spanned.rs#L27-L70) the span information as if it was a struct to satisfy serde. But serde doesn't know that when it deserializes the `Content` object, it just knows that the Deserializer reports it has a string, int or what have you, and deserializes that, "losing" the span information. This problem also affects things like `#[serde(flatten)]` for slightly different reasons, but they all basically come down to the serde API not truly supporting span information, nor [any plans](https://github.com/serde-rs/serde/issues/1811) to.
@@ -127,7 +127,7 @@ The most simple use case for `toml-span` is just as slimmer version of `toml` th
 
 #### `toml` version
 
-```rust
+```rust,ignore
 fn is_crates_io_sparse(config: &toml::Value) -> Option<bool> {
     config
         .get("registries")
@@ -160,7 +160,7 @@ Of course the most common case is deserializing toml into Rust containers.
 
 #### `toml` version
 
-```rust
+```rust,ignore
 #[derive(Deserialize, Clone)]
 #[cfg_attr(test, derive(Debug, PartialEq, Eq))]
 #[serde(rename_all = "kebab-case", deny_unknown_fields)]
@@ -182,7 +182,7 @@ The following code is much more verbose (before proc macros run at least), but s
 
 Before `toml-span`, all cases where a user specifies a crate spec, (ie, name + optional version requirement) was done via two separate fields, `name` and `version`. This was quite verbose, as in many cases not only is `version` not specified, but also could be just a string if the user doesn't need/want to provide other fields. Normally one would use the [string or struct](https://serde.rs/string-or-struct.html) idiom but this was impossible due to how I wanted to reorganize the data to have the package spec as either a string or struct, _as well as_ optional data that is flattened to the same level as the package spec. But since `toml-span` changes how deserialization is done, this change was quite trivial after the initial work of getting the crate stood up was done.
 
-```rust
+```rust,ignore
 pub type CrateBan = PackageSpecOrExtended<CrateBanExtended>;
 
 #[cfg_attr(test, derive(Debug, PartialEq, Eq))]

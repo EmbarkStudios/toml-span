@@ -76,6 +76,7 @@ rustflags = [
     "-Wnonstandard_style",
     "-Wrust_2018_idioms",
     # END - Embark standard lints v6 for Rust 1.55+
+    "-Dmissing_docs",
 ]
 
 [target.'cfg(target_env = "musl")']

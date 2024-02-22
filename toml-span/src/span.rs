@@ -1,15 +1,22 @@
+//! Provides span helpers
+
+/// A start and end location within a toml document
 #[derive(Copy, Clone, PartialEq, Eq, Default, Debug)]
 pub struct Span {
+    /// The start byte index
     pub start: usize,
+    /// The end (exclusive) byte index
     pub end: usize,
 }
 
 impl Span {
+    /// Creates a new [`Span`]
     #[inline]
     pub fn new(start: usize, end: usize) -> Self {
         Self { start, end }
     }
 
+    /// Checks if the start and end are the same, and thus the span is empty
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.start == 0 && self.end == 0
@@ -40,12 +47,16 @@ impl From<Span> for std::ops::Range<usize> {
     }
 }
 
+/// An arbitrary `T` with additional span information
 pub struct Spanned<T> {
+    /// The value
     pub value: T,
+    /// The span information for the value
     pub span: Span,
 }
 
 impl<T> Spanned<T> {
+    /// Creates a [`Spanned`] with just the value and an empty [`Span`]
     #[inline]
     pub const fn new(value: T) -> Self {
         Self {
@@ -54,17 +65,20 @@ impl<T> Spanned<T> {
         }
     }
 
+    /// Creates a [`Spanned`] from both a value and a [`Span`]
     #[inline]
     pub const fn with_span(value: T, span: Span) -> Self {
         Self { value, span }
     }
 
-    /// Converts Self into its inner value
+    /// Converts [`Self`] into its inner value
     #[inline]
     pub fn take(self) -> T {
         self.value
     }
 
+    /// Helper to convert the value inside the Spanned
+    #[inline]
     pub fn map<V>(self) -> Spanned<V>
     where
         V: From<T>,
