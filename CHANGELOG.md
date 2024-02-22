@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Added
+- [PR#3](https://github.com/EmbarkStudios/toml-span/pull/3) actually added some documentation.
+- [PR#3](https://github.com/EmbarkStudios/toml-span/pull/3) added `DeserError::merge`
+
+### Fixed
+- [PR#3](https://github.com/EmbarkStudios/toml-span/pull/3) `TableHelper::take` now appends the key to the `expected` array
+
+### Changed
+- [PR#3](https://github.com/EmbarkStudios/toml-span/pull/3) removed `TableHelper::with_default/parse/parse_opt`
+
 ## [0.1.0] - 2024-02-20
 ### Added
 - Initial implementation
