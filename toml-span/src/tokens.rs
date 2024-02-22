@@ -1,3 +1,6 @@
+#![allow(missing_docs)]
+//! The tokenizer is publicly exposed if you wish to use it instead
+
 use crate::{value::Key, Span};
 use std::{borrow::Cow, char, str};
 

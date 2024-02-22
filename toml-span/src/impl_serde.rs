@@ -1,8 +1,12 @@
-use crate::value::{Value, ValueInner};
-use serde::{
-    self,
-    ser::{SerializeMap, SerializeSeq},
+#![cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+
+//! Provides [`serde::Serialize`] support for [`Value`] and [`Spanned`]
+
+use crate::{
+    value::{Value, ValueInner},
+    Spanned,
 };
+use serde::ser::{SerializeMap, SerializeSeq};
 
 impl<'de> serde::Serialize for Value<'de> {
     fn serialize<S>(&self, ser: S) -> Result<S::Ok, S::Error>
@@ -32,7 +36,7 @@ impl<'de> serde::Serialize for Value<'de> {
     }
 }
 
-impl<T> serde::Serialize for crate::span::Spanned<T>
+impl<T> serde::Serialize for Spanned<T>
 where
     T: serde::Serialize,
 {

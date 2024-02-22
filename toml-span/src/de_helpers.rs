@@ -1,3 +1,5 @@
+//! Provides helpers for deserializing [`Value`]/[`ValueInner`] into Rust types
+
 use crate::{
     span::Spanned,
     value::{self, Table, Value, ValueInner},
@@ -5,6 +7,7 @@ use crate::{
 };
 use std::{fmt::Display, str::FromStr};
 
+/// Helper for construction an [`ErrorKind::Wanted`]
 #[inline]
 pub fn expected(expected: &'static str, found: ValueInner<'_>, span: Span) -> Error {
     Error {
@@ -17,6 +20,8 @@ pub fn expected(expected: &'static str, found: ValueInner<'_>, span: Span) -> Er
     }
 }
 
+/// Attempts to acquire a [`ValueInner::String`] and parse it, returning an error
+/// if the value is not a string, or the parse implementation fails
 #[inline]
 pub fn parse<T, E>(value: &mut Value<'_>) -> Result<T, Error>
 where
@@ -34,10 +39,17 @@ where
     }
 }
 
+/// A helper for dealing with [`ValueInner::Table`]
 pub struct TableHelper<'de> {
+    /// The table the helper is operating upon
     pub table: Table<'de>,
+    /// The errors accumulated while deserializing
     pub errors: Vec<Error>,
+    /// The list of keys that have been requested by the user, this is used to
+    /// show a list of keys that _could_ be used in the case the finalize method
+    /// fails due to keys still being present in the map
     expected: Vec<&'static str>,
+    /// The span for the table location
     span: Span,
 }
 
@@ -53,6 +65,7 @@ impl<'de> From<(Table<'de>, Span)> for TableHelper<'de> {
 }
 
 impl<'de> TableHelper<'de> {
+    /// Creates a helper for the value, failing if it is not a table
     pub fn new(value: &mut Value<'de>) -> Result<Self, DeserError> {
         let table = match value.take() {
             ValueInner::Table(table) => table,
@@ -67,21 +80,34 @@ impl<'de> TableHelper<'de> {
         })
     }
 
+    /// Returns true if the table contains the specified key
     #[inline]
-    pub fn contains(&self, name: &'static str) -> bool {
+    pub fn contains(&self, name: &'de str) -> bool {
         self.table.contains_key(&name.into())
     }
 
+    /// Takes the specified key and its value if it exists
     #[inline]
     pub fn take(&mut self, name: &'static str) -> Option<(value::Key<'de>, Value<'de>)> {
+        self.expected.push(name);
         self.table.remove_entry(&name.into())
     }
 
+    /// Attempts to deserialize the specified key
+    ///
+    /// Errors that occur when calling this method are automatically added to
+    /// the set of errors that are reported from [`Self::finalize`], so not early
+    /// returning if this method fails will still report the error by default
+    ///
+    /// # Errors
+    /// - The key does not exist
+    /// - The [`Deserialize`] implementation for the type returns an error
     #[inline]
     pub fn required<T: Deserialize<'de>>(&mut self, name: &'static str) -> Result<T, Error> {
         Ok(self.required_s(name)?.value)
     }
 
+    /// The same as [`Self::required`], except it returns a [`Spanned`]
     pub fn required_s<T: Deserialize<'de>>(
         &mut self,
         name: &'static str,
@@ -105,30 +131,16 @@ impl<'de> TableHelper<'de> {
         })
     }
 
-    pub fn with_default<T: Deserialize<'de>>(
-        &mut self,
-        name: &'static str,
-        def: impl FnOnce() -> T,
-    ) -> (T, Span) {
-        self.expected.push(name);
-
-        let Some(mut val) = self.table.remove(&name.into()) else {
-            return (def(), Span::default());
-        };
-
-        match T::deserialize(&mut val) {
-            Ok(v) => (v, val.span),
-            Err(mut err) => {
-                self.errors.append(&mut err.errors);
-                (def(), Span::default())
-            }
-        }
-    }
-
+    /// Attempts to deserialize the specified key, if it exists
+    ///
+    /// Note that if the key exists but deserialization fails, an error will be
+    /// appended and if [`Self::finalize`] is called it will return that error
+    /// along with any others that occurred
     pub fn optional<T: Deserialize<'de>>(&mut self, name: &'static str) -> Option<T> {
         self.optional_s(name).map(|v| v.value)
     }
 
+    /// The same as [`Self::optional`], except it returns a [`Spanned`]
     pub fn optional_s<T: Deserialize<'de>>(&mut self, name: &'static str) -> Option<Spanned<T>> {
         self.expected.push(name);
 
@@ -145,51 +157,17 @@ impl<'de> TableHelper<'de> {
         }
     }
 
-    pub fn parse<T, E>(&mut self, name: &'static str) -> T
-    where
-        T: FromStr<Err = E> + Default,
-        E: Display,
-    {
-        self.expected.push(name);
-
-        let Some(mut val) = self.table.remove(&name.into()) else {
-            self.errors.push(Error {
-                kind: ErrorKind::MissingField(name),
-                span: self.span,
-                line_info: None,
-            });
-            return T::default();
-        };
-
-        match parse(&mut val) {
-            Ok(v) => v,
-            Err(err) => {
-                self.errors.push(err);
-                T::default()
-            }
-        }
-    }
-
-    pub fn parse_opt<T, E>(&mut self, name: &'static str) -> Option<T>
-    where
-        T: FromStr<Err = E>,
-        E: Display,
-    {
-        self.expected.push(name);
-
-        let Some(mut val) = self.table.remove(&name.into()) else {
-            return None;
-        };
-
-        match parse(&mut val) {
-            Ok(v) => Some(v),
-            Err(err) => {
-                self.errors.push(err);
-                None
-            }
-        }
-    }
-
+    /// Called when you are finished with this [`TableHelper`]
+    ///
+    /// If errors have been accumulated when using this [`TableHelper`], this will
+    /// return an error with all of those errors.
+    ///
+    /// Additionally, if [`Option::None`] is passed, any keys that still exist
+    /// in the table will be added to an [`ErrorKind::UnexpectedKeys`] error,
+    /// which can be considered equivalent to [`#[serde(deny_unknown_fields)]`](https://serde.rs/container-attrs.html#deny_unknown_fields)
+    ///
+    /// If you want simulate [`#[serde(flatten)]`](https://serde.rs/field-attrs.html#flatten)
+    /// you can instead put that table back in its original value during this step
     pub fn finalize(mut self, original: Option<&mut Value<'de>>) -> Result<(), DeserError> {
         if let Some(original) = original {
             original.set(ValueInner::Table(self.table));

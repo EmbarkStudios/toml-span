@@ -1,3 +1,5 @@
+//! Core deserialization logic that deserializes toml content to [`Value`]
+
 use crate::{
     error::{Error, ErrorKind},
     tokens::{Error as TokenError, Token, Tokenizer},
@@ -14,6 +16,7 @@ type DeStr<'de> = Cow<'de, str>;
 type TablePair<'de> = (Key<'de>, Val<'de>);
 type InlineVec<T> = SmallVec<[T; 5]>;
 
+/// Parses a toml string into a [`ValueInner::Table`]
 pub fn parse(s: &str) -> Result<Value<'_>, Error> {
     let mut de = Deserializer::new(s);
 
