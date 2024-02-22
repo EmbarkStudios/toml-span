@@ -44,7 +44,7 @@ jobs:
       - name: cargo test
         run: cargo test
 
-  deny-check:
+  deny:
     name: cargo-deny
     runs-on: ubuntu-22.04
     steps:
@@ -60,3 +60,9 @@ jobs:
       - run: cargo fetch
       - name: cargo publish check
         run: cargo publish --dry-run -p toml-span
+
+  test_success:
+    runs-on: ubuntu-22.04
+    needs: [lint,test,deny,publish-check]
+    steps:
+    - run: echo "All test jobs passed"
