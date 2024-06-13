@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Changed
+- [PR#6](https://github.com/EmbarkStudios/toml-span/pull/6) updates crates and fixed a lint.
+
+### Fixed
+- [PR#4](https://github.com/EmbarkStudios/toml-span/pull/4) added the missing `repository` field in the `toml-span` package manifest.
+- [PR#5](https://github.com/EmbarkStudios/toml-span/pull/5) fixed the crate package missing the LICENSE-* files and CHANGELOG.md.
+
 ## [0.2.0] - 2024-02-22
 ### Added
 - [PR#3](https://github.com/EmbarkStudios/toml-span/pull/3) actually added some documentation.
