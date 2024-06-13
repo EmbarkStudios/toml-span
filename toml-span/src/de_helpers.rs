@@ -144,9 +144,7 @@ impl<'de> TableHelper<'de> {
     pub fn optional_s<T: Deserialize<'de>>(&mut self, name: &'static str) -> Option<Spanned<T>> {
         self.expected.push(name);
 
-        let Some(mut val) = self.table.remove(&name.into()) else {
-            return None;
-        };
+        let mut val = self.table.remove(&name.into())?;
 
         match Spanned::<T>::deserialize(&mut val) {
             Ok(v) => Some(v),
