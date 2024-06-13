@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.2.1] - 2024-06-13
 ### Changed
 - [PR#6](https://github.com/EmbarkStudios/toml-span/pull/6) updates crates and fixed a lint.
 
@@ -32,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial implementation
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/toml-span/compare/0.2.0...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/toml-span/compare/0.2.1...HEAD
+[0.2.1]: https://github.com/EmbarkStudios/toml-span/compare/0.2.0...0.2.1
 [0.2.0]: https://github.com/EmbarkStudios/toml-span/compare/0.1.0...0.2.0
 [0.1.0]: https://github.com/EmbarkStudios/toml-span/releases/tag/0.1.0
