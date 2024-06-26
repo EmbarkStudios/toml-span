@@ -82,15 +82,15 @@ impl<'de> TableHelper<'de> {
 
     /// Returns true if the table contains the specified key
     #[inline]
-    pub fn contains(&self, name: &'de str) -> bool {
-        self.table.contains_key(&name.into())
+    pub fn contains(&self, name: &str) -> bool {
+        self.table.contains_key(name)
     }
 
     /// Takes the specified key and its value if it exists
     #[inline]
     pub fn take(&mut self, name: &'static str) -> Option<(value::Key<'de>, Value<'de>)> {
         self.expected.push(name);
-        self.table.remove_entry(&name.into())
+        self.table.remove_entry(name)
     }
 
     /// Attempts to deserialize the specified key
@@ -114,7 +114,7 @@ impl<'de> TableHelper<'de> {
     ) -> Result<Spanned<T>, Error> {
         self.expected.push(name);
 
-        let Some(mut val) = self.table.remove(&name.into()) else {
+        let Some(mut val) = self.table.remove(name) else {
             let missing = Error {
                 kind: ErrorKind::MissingField(name),
                 span: self.span,
@@ -144,7 +144,7 @@ impl<'de> TableHelper<'de> {
     pub fn optional_s<T: Deserialize<'de>>(&mut self, name: &'static str) -> Option<Spanned<T>> {
         self.expected.push(name);
 
-        let mut val = self.table.remove(&name.into())?;
+        let mut val = self.table.remove(name)?;
 
         match Spanned::<T>::deserialize(&mut val) {
             Ok(v) => Some(v),

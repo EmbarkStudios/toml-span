@@ -60,7 +60,7 @@ impl<'de> Deserialize<'de> for Package {
             ValueInner::Table(tab) => {
                 let mut th = TableHelper::from((tab, value.span));
 
-                if let Some(mut val) = th.table.remove(&"crate".into()) {
+                if let Some(mut val) = th.table.remove("crate") {
                     let (name, version) = match val.take() {
                         ValueInner::String(s) => from_str(s),
                         found => {
