@@ -66,7 +66,7 @@ impl<'de> Value<'de> {
     pub fn has_key(&self, key: &str) -> bool {
         self.value.as_ref().map_or(false, |val| {
             if let ValueInner::Table(table) = val {
-                table.contains_key(&key.into())
+                table.contains_key(key)
             } else {
                 false
             }
@@ -144,7 +144,7 @@ impl<'de> Value<'de> {
     /// Note that this is JSON pointer**-like** because `/` is not supported in
     /// key names because I don't see the point. If you want this it is easy to
     /// implement.
-    pub fn pointer(&self, pointer: &'de str) -> Option<&Self> {
+    pub fn pointer(&self, pointer: &str) -> Option<&Self> {
         if pointer.is_empty() {
             return Some(self);
         } else if !pointer.starts_with('/') {
@@ -157,9 +157,9 @@ impl<'de> Value<'de> {
             // Don't support / or ~ in key names unless someone actually opens
             // an issue about it
             //.map(|x| x.replace("~1", "/").replace("~0", "~"))
-            .try_fold(self, |target, token| {
+            .try_fold(self, move |target, token| {
                 (match &target.value {
-                    Some(ValueInner::Table(tab)) => tab.get(&token.into()),
+                    Some(ValueInner::Table(tab)) => tab.get(token),
                     Some(ValueInner::Array(list)) => parse_index(token).and_then(|x| list.get(x)),
                     _ => None,
                 })
@@ -183,7 +183,7 @@ impl<'de> Value<'de> {
             //.map(|x| x.replace("~1", "/").replace("~0", "~"))
             .try_fold(self, |target, token| {
                 (match &mut target.value {
-                    Some(ValueInner::Table(tab)) => tab.get_mut(&token.into()),
+                    Some(ValueInner::Table(tab)) => tab.get_mut(token),
                     Some(ValueInner::Array(list)) => {
                         parse_index(token).and_then(|x| list.get_mut(x))
                     }
@@ -225,18 +225,21 @@ pub struct Key<'de> {
     pub span: Span,
 }
 
-impl<'de> From<&'de str> for Key<'de> {
-    fn from(k: &'de str) -> Self {
-        Self {
-            name: Cow::Borrowed(k),
-            span: Span::default(),
-        }
+impl<'de> std::borrow::Borrow<str> for Key<'de> {
+    fn borrow(&self) -> &str {
+        self.name.as_ref()
     }
 }
 
 impl<'de> fmt::Debug for Key<'de> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.name)
+        f.write_str(&self.name)
+    }
+}
+
+impl<'de> fmt::Display for Key<'de> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.name)
     }
 }
 
