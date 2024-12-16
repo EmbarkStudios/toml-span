@@ -15,10 +15,12 @@ note[string]: root_people_0_last_name
   │              ^^^^^^^^^^^
 
 note[table]: root_people_0
-  ┌─ array_many:1:1
-  │
-1 │ 
-  │ ^
+  ┌─ array_many:2:1
+  │  
+2 │ ╭ [[people]]
+3 │ │ first_name = "Bruce"
+4 │ │ last_name = "Springsteen"
+  │ ╰─────────────────────────^
 
 note[string]: root_people_1_first_name
   ┌─ array_many:7:15
@@ -33,10 +35,12 @@ note[string]: root_people_1_last_name
   │              ^^^^^^^
 
 note[table]: root_people_1
-  ┌─ array_many:1:1
-  │
-1 │ 
-  │ ^
+  ┌─ array_many:6:1
+  │  
+6 │ ╭ [[people]]
+7 │ │ first_name = "Eric"
+8 │ │ last_name = "Clapton"
+  │ ╰─────────────────────^
 
 note[string]: root_people_2_first_name
    ┌─ array_many:11:15
@@ -51,16 +55,20 @@ note[string]: root_people_2_last_name
    │              ^^^^^
 
 note[table]: root_people_2
-  ┌─ array_many:1:1
-  │
-1 │ 
-  │ ^
+   ┌─ array_many:10:1
+   │  
+10 │ ╭ [[people]]
+11 │ │ first_name = "Bob"
+12 │ │ last_name = "Seger"
+   │ ╰───────────────────^
 
 note[array]: root_people
-  ┌─ array_many:1:1
-  │
-1 │ 
-  │ ^
+  ┌─ array_many:2:1
+  │  
+2 │ ╭ [[people]]
+3 │ │ first_name = "Bruce"
+4 │ │ last_name = "Springsteen"
+  │ ╰─────────────────────────^
 
 note[table]: root
    ┌─ array_many:1:1
@@ -73,5 +81,3 @@ note[table]: root
 12 │ │ last_name = "Seger"
 13 │ │ 
    │ ╰^
-
-

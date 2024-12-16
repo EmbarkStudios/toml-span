@@ -1,0 +1,18 @@
+---
+source: integ-tests/tests/valid.rs
+expression: valid_toml
+---
+{
+  "workspace": {
+    "bar": {
+      "inline": {
+        "foo": 3
+      }
+    },
+    "foo": {
+      "bar": 3
+    },
+    "members": true,
+    "other": false
+  }
+}

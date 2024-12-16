@@ -10,21 +10,24 @@ note[integer]: root_a_b_c_answer
 
 note[table]: root_a_b_c
   ┌─ implicit_groups:1:1
-  │
-1 │ [a.b.c]
-  │ ^
+  │  
+1 │ ╭ [a.b.c]
+2 │ │ answer = 42
+  │ ╰───────────^
 
 note[table]: root_a_b
   ┌─ implicit_groups:1:1
-  │
-1 │ [a.b.c]
-  │ ^
+  │  
+1 │ ╭ [a.b.c]
+2 │ │ answer = 42
+  │ ╰───────────^
 
 note[table]: root_a
   ┌─ implicit_groups:1:1
-  │
-1 │ [a.b.c]
-  │ ^
+  │  
+1 │ ╭ [a.b.c]
+2 │ │ answer = 42
+  │ ╰───────────^
 
 note[table]: root
   ┌─ implicit_groups:1:1
@@ -32,5 +35,3 @@ note[table]: root
 1 │ ╭ [a.b.c]
 2 │ │ answer = 42
   │ ╰───────────^
-
-

@@ -10,21 +10,24 @@ note[string]: root_albums_songs_0_name
 
 note[table]: root_albums_songs_0
   ┌─ implicit_array:1:1
-  │
-1 │ [[albums.songs]]
-  │ ^
+  │  
+1 │ ╭ [[albums.songs]]
+2 │ │ name = "Glory Days"
+  │ ╰───────────────────^
 
 note[array]: root_albums_songs
   ┌─ implicit_array:1:1
-  │
-1 │ [[albums.songs]]
-  │ ^
+  │  
+1 │ ╭ [[albums.songs]]
+2 │ │ name = "Glory Days"
+  │ ╰───────────────────^
 
 note[table]: root_albums
   ┌─ implicit_array:1:1
-  │
-1 │ [[albums.songs]]
-  │ ^
+  │  
+1 │ ╭ [[albums.songs]]
+2 │ │ name = "Glory Days"
+  │ ╰───────────────────^
 
 note[table]: root
   ┌─ implicit_array:1:1
@@ -32,5 +35,3 @@ note[table]: root
 1 │ ╭ [[albums.songs]]
 2 │ │ name = "Glory Days"
   │ ╰───────────────────^
-
-

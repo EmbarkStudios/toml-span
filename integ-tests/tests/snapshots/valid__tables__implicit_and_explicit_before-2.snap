@@ -9,16 +9,18 @@ note[integer]: root_a_b_c_answer
   │          ^^
 
 note[table]: root_a_b_c
-  ┌─ implicit_and_explicit_before:1:1
-  │
-1 │ 
-  │ ^
+  ┌─ implicit_and_explicit_before:5:1
+  │  
+5 │ ╭ [a.b.c]
+6 │ │ answer = 42
+  │ ╰───────────^
 
 note[table]: root_a_b
-  ┌─ implicit_and_explicit_before:1:1
-  │
-1 │ 
-  │ ^
+  ┌─ implicit_and_explicit_before:5:1
+  │  
+5 │ ╭ [a.b.c]
+6 │ │ answer = 42
+  │ ╰───────────^
 
 note[integer]: root_a_better
   ┌─ implicit_and_explicit_before:3:10
@@ -27,10 +29,11 @@ note[integer]: root_a_better
   │          ^^
 
 note[table]: root_a
-  ┌─ implicit_and_explicit_before:1:1
-  │
-1 │ 
-  │ ^
+  ┌─ implicit_and_explicit_before:2:1
+  │  
+2 │ ╭ [a]
+3 │ │ better = 43
+  │ ╰───────────^
 
 note[table]: root
   ┌─ implicit_and_explicit_before:1:1
@@ -43,5 +46,3 @@ note[table]: root
 6 │ │ answer = 42
 7 │ │ 
   │ ╰^
-
-
