@@ -484,7 +484,7 @@ impl<'a> Tokenizer<'a> {
     }
 }
 
-impl<'a> Iterator for CrlfFold<'a> {
+impl Iterator for CrlfFold<'_> {
     type Item = (usize, char);
 
     fn next(&mut self) -> Option<(usize, char)> {
@@ -531,7 +531,7 @@ fn is_keylike(ch: char) -> bool {
     ch.is_ascii_alphanumeric() || ch == '-' || ch == '_'
 }
 
-impl<'a> Token<'a> {
+impl Token<'_> {
     pub fn describe(&self) -> &'static str {
         match *self {
             Token::Keylike(_) => "an identifier",

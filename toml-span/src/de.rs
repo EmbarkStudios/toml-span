@@ -61,7 +61,7 @@ struct Ctx<'de, 'b> {
     //array: bool,
 }
 
-impl<'de, 'b> Ctx<'de, 'b> {
+impl Ctx<'_, '_> {
     #[inline]
     fn error(&self, start: usize, end: Option<usize>, kind: ErrorKind) -> Error {
         self.de.error(start, end, kind)
@@ -1102,7 +1102,7 @@ enum E<'a> {
     DottedTable(Vec<TablePair<'a>>),
 }
 
-impl<'a> E<'a> {
+impl E<'_> {
     #[allow(dead_code)]
     fn type_name(&self) -> &'static str {
         match *self {
