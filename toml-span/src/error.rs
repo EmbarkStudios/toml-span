@@ -129,6 +129,8 @@ pub enum ErrorKind {
     UnexpectedValue {
         /// The list of values that could have been used, eg. typically enum variants
         expected: &'static [&'static str],
+        /// The actual value that was found.
+        value: Option<String>,
     },
 }
 
@@ -225,7 +227,7 @@ impl Display for Error {
             ErrorKind::Deprecated { old, new } => {
                 write!(f, "field '{old}' is deprecated, '{new}' has replaced it")?;
             }
-            ErrorKind::UnexpectedValue { expected } => write!(f, "expected '{expected:?}'")?,
+            ErrorKind::UnexpectedValue { expected, .. } => write!(f, "expected '{expected:?}'")?,
         }
 
         // if !self.key.is_empty() {
@@ -328,7 +330,7 @@ impl Error {
                 .with_labels(vec![
                     Label::primary(fid, self.span).with_message("deprecated field")
                 ]),
-            ErrorKind::UnexpectedValue { expected } => diag
+            ErrorKind::UnexpectedValue { expected, .. } => diag
                 .with_message(format!("expected '{expected:?}'"))
                 .with_labels(vec![
                     Label::primary(fid, self.span).with_message("unexpected value")
