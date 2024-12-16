@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Changed
+- [PR#9](https://github.com/EmbarkStudios/toml-span/pull/9) added `value` to `ErrorKind::UnexpectedValue`.
+
 ## [0.3.0] - 2024-06-26
 ### Changed
 - [PR#7](https://github.com/EmbarkStudios/toml-span/pull/7) implemented `Borrow<str>` for `Key`, making the API much more ergonomic.
