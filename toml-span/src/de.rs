@@ -157,6 +157,11 @@ fn deserialize_table<'de, 'b>(
                 ));
             }
 
+            let span = ttable.values.as_ref().and_then(|v| v.span).map_or_else(
+                || Span::new(ttable.at, ttable.end),
+                |span| Span::new(ttable.at.min(span.start), ttable.end.max(span.end)),
+            );
+
             let array = ttable.array && ctx.depth == ttable.header.len() - 1;
             ctx.cur += 1;
 
@@ -168,7 +173,7 @@ fn deserialize_table<'de, 'b>(
                 table_indices: ctx.table_indices,
                 table_pindices: ctx.table_pindices,
                 de: ctx.de,
-                values: None, //array.then(|| ttable.values.take().unwrap()),
+                values: None,
             };
 
             let value = if array {
@@ -181,7 +186,7 @@ fn deserialize_table<'de, 'b>(
                 ValueInner::Table(tab)
             };
 
-            table.insert(key, Value::new(value));
+            table.insert(key, Value::with_span(value, span));
             continue;
         }
 
@@ -193,7 +198,7 @@ fn deserialize_table<'de, 'b>(
             return Err(ctx.error(ttable.at, Some(ttable.end), ErrorKind::RedefineAsArray));
         }
 
-        ctx.values = ttable.values.take();
+        ctx.values = ttable.values.take().map(|table| table.values);
     }
 
     Ok(ctx.cur_parent)
@@ -215,7 +220,7 @@ fn to_value<'de>(val: Val<'de>, de: &Deserializer<'de>) -> Result<Value<'de>, Er
         E::DottedTable(tab) | E::InlineTable(tab) => {
             let mut ntable = value::Table::new();
 
-            for (k, v) in tab {
+            for (k, v) in tab.values {
                 table_insert(&mut ntable, k, v, de)?;
             }
 
@@ -253,13 +258,6 @@ fn deserialize_array<'de, 'b>(
     tables: &'b mut [Table<'de>],
     arr: &mut Vec<value::Value<'de>>,
 ) -> Result<usize, Error> {
-    // if let Some(values) = ctx.values.take() {
-    //     for (key, val) in values {
-    //         //printc!(&ctx, "{} => {val:?}", key.name);
-    //         arr.push(to_value(val, ctx.de)?);
-    //     }
-    // }
-
     while ctx.cur_parent < ctx.max {
         let header_stripped = tables[ctx.cur_parent]
             .header
@@ -284,13 +282,15 @@ fn deserialize_array<'de, 'b>(
             })
             .unwrap_or(ctx.max);
 
+        let ttable = &mut tables[ctx.cur_parent];
+
+        let span = ttable.values.as_ref().and_then(|v| v.span).map_or_else(
+            || Span::new(ttable.at, ttable.end),
+            |span| Span::new(ttable.at.min(span.start), ttable.end.max(span.end)),
+        );
+
         let actx = Ctx {
-            values: Some(
-                tables[ctx.cur_parent]
-                    .values
-                    .take()
-                    .expect("no array values"),
-            ),
+            values: Some(ttable.values.take().expect("no array values").values),
             max: next,
             depth: ctx.depth + 1,
             cur: 0,
@@ -302,7 +302,7 @@ fn deserialize_array<'de, 'b>(
 
         let mut table = value::Table::new();
         deserialize_table(actx, tables, &mut table)?;
-        arr.push(Value::new(ValueInner::Table(table)));
+        arr.push(Value::with_span(ValueInner::Table(table), span));
 
         ctx.cur_parent = next;
     }
@@ -362,20 +362,27 @@ fn build_table_pindices<'de>(tables: &[Table<'de>]) -> BTreeMap<InlineVec<DeStr<
     res
 }
 
-// fn headers_equal(hdr_a: &[Key<'_>], hdr_b: &[Key<'_>]) -> bool {
-//     if hdr_a.len() != hdr_b.len() {
-//         return false;
-//     }
-//     hdr_a.iter().zip(hdr_b.iter()).all(|(h1, h2)| h1.1 == h2.1)
-// }
-
-#[derive(Debug)]
 struct Table<'de> {
     at: usize,
     end: usize,
     header: InlineVec<Key<'de>>,
-    values: Option<Vec<TablePair<'de>>>,
+    values: Option<TableValues<'de>>,
     array: bool,
+}
+
+struct TableValues<'de> {
+    values: Vec<TablePair<'de>>,
+    span: Option<Span>,
+}
+
+#[allow(clippy::derivable_impls)]
+impl Default for TableValues<'_> {
+    fn default() -> Self {
+        Self {
+            values: Vec::new(),
+            span: None,
+        }
+    }
 }
 
 impl<'a> Deserializer<'a> {
@@ -411,18 +418,34 @@ impl<'a> Deserializer<'a> {
                         at,
                         end,
                         header: InlineVec::new(),
-                        values: Some(Vec::new()),
+                        values: Some(TableValues::default()),
                         array,
                     };
                     while let Some(part) = header.next().map_err(|e| self.token_error(e))? {
                         cur_table.header.push(part);
                     }
+                    cur_table.end = header.tokens.current();
                 }
-                Line::KeyValue(key, value) => {
-                    if cur_table.values.is_none() {
-                        cur_table.values = Some(Vec::new());
+                Line::KeyValue {
+                    key,
+                    value,
+                    at,
+                    end,
+                } => {
+                    let table_values = cur_table.values.get_or_insert_with(|| TableValues {
+                        values: Vec::new(),
+                        span: None,
+                    });
+                    self.add_dotted_key(key, value, table_values)?;
+                    match table_values.span {
+                        Some(ref mut span) => {
+                            span.start = span.start.min(at);
+                            span.end = span.end.max(end);
+                        }
+                        None => {
+                            table_values.span = Some(Span::new(at, end));
+                        }
                     }
-                    self.add_dotted_key(key, value, cur_table.values.as_mut().unwrap())?;
                 }
             }
         }
@@ -467,18 +490,25 @@ impl<'a> Deserializer<'a> {
     }
 
     fn key_value(&mut self) -> Result<Line<'a>, Error> {
+        let start = self.tokens.current();
         let key = self.dotted_key()?;
         self.eat_whitespace();
         self.expect(Token::Equals)?;
         self.eat_whitespace();
 
         let value = self.value()?;
+        let end = self.tokens.current();
         self.eat_whitespace();
         if !self.eat_comment()? {
             self.eat_newline_or_eof()?;
         }
 
-        Ok(Line::KeyValue(key, value))
+        Ok(Line::KeyValue {
+            key,
+            value,
+            at: start,
+            end,
+        })
     }
 
     fn value(&mut self) -> Result<Val<'a>, Error> {
@@ -730,8 +760,8 @@ impl<'a> Deserializer<'a> {
 
     // TODO(#140): shouldn't buffer up this entire table in memory, it'd be
     // great to defer parsing everything until later.
-    fn inline_table(&mut self) -> Result<(Span, Vec<TablePair<'a>>), Error> {
-        let mut ret = Vec::new();
+    fn inline_table(&mut self) -> Result<(Span, TableValues<'a>), Error> {
+        let mut ret = TableValues::default();
         self.eat_whitespace();
         if let Some(span) = self.eat_spanned(Token::RightBrace)? {
             return Ok((span, ret));
@@ -817,14 +847,15 @@ impl<'a> Deserializer<'a> {
         &self,
         mut key_parts: Vec<Key<'a>>,
         value: Val<'a>,
-        values: &mut Vec<TablePair<'a>>,
+        values: &mut TableValues<'a>,
     ) -> Result<(), Error> {
         let key = key_parts.remove(0);
         if key_parts.is_empty() {
-            values.push((key, value));
+            values.values.push((key, value));
             return Ok(());
         }
         match values
+            .values
             .iter_mut()
             .find(|&&mut (ref k, _)| k.name == key.name)
         {
@@ -848,19 +879,19 @@ impl<'a> Deserializer<'a> {
         }
         // The start/end value is somewhat misleading here.
         let table_values = Val {
-            e: E::DottedTable(Vec::new()),
+            e: E::DottedTable(TableValues::default()),
             start: value.start,
             end: value.end,
         };
-        values.push((key, table_values));
-        let last_i = values.len() - 1;
+        values.values.push((key, table_values));
+        let last_i = values.values.len() - 1;
         if let (
             _,
             Val {
                 e: E::DottedTable(ref mut v),
                 ..
             },
-        ) = values[last_i]
+        ) = values.values[last_i]
         {
             self.add_dotted_key(key_parts, value, v)?;
         }
@@ -977,60 +1008,6 @@ impl<'a> Deserializer<'a> {
     }
 }
 
-// impl Error {
-//     pub(crate) fn line_col(&self) -> Option<(usize, usize)> {
-//         self.line.map(|line| (line, self.col))
-//     }
-
-//     fn from_kind(at: Option<usize>, kind: ErrorKind) -> Self {
-//         Error {
-//             kind,
-//             line: None,
-//             col: 0,
-//             at,
-//             message: String::new(),
-//             key: Vec::new(),
-//         }
-//     }
-
-//     fn custom(at: Option<usize>, s: String) -> Self {
-//         Error {
-//             kind: ErrorKind::Custom,
-//             line: None,
-//             col: 0,
-//             at,
-//             message: s,
-//             key: Vec::new(),
-//         }
-//     }
-
-//     pub(crate) fn add_key_context(&mut self, key: &str) {
-//         self.key.insert(0, key.to_string());
-//     }
-
-//     fn fix_offset<F>(&mut self, f: F)
-//     where
-//         F: FnOnce() -> Option<usize>,
-//     {
-//         // An existing offset is always better positioned than anything we might
-//         // want to add later.
-//         if self.at.is_none() {
-//             self.at = f();
-//         }
-//     }
-
-//     fn fix_linecol<F>(&mut self, f: F)
-//     where
-//         F: FnOnce(usize) -> (usize, usize),
-//     {
-//         if let Some(at) = self.at {
-//             let (line, col) = f(at);
-//             self.line = Some(line);
-//             self.col = col;
-//         }
-//     }
-// }
-
 impl std::convert::From<Error> for std::io::Error {
     fn from(e: Error) -> Self {
         std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string())
@@ -1044,7 +1021,12 @@ enum Line<'a> {
         header: Header<'a>,
         array: bool,
     },
-    KeyValue(Vec<Key<'a>>, Val<'a>),
+    KeyValue {
+        at: usize,
+        end: usize,
+        key: Vec<Key<'a>>,
+        value: Val<'a>,
+    },
 }
 
 struct Header<'a> {
@@ -1084,22 +1066,20 @@ impl<'a> Header<'a> {
     }
 }
 
-#[derive(Debug)]
 struct Val<'a> {
     e: E<'a>,
     start: usize,
     end: usize,
 }
 
-#[derive(Debug)]
 enum E<'a> {
     Integer(i64),
     Float(f64),
     Boolean(bool),
     String(DeStr<'a>),
     Array(Vec<Val<'a>>),
-    InlineTable(Vec<TablePair<'a>>),
-    DottedTable(Vec<TablePair<'a>>),
+    InlineTable(TableValues<'a>),
+    DottedTable(TableValues<'a>),
 }
 
 impl E<'_> {

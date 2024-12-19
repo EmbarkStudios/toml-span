@@ -21,10 +21,12 @@ note[string]: root_fruit_0_physical_shape
   │          ^^^^^
 
 note[table]: root_fruit_0_physical
-  ┌─ fruit:1:1
-  │
-1 │ [[fruit]]
-  │ ^
+  ┌─ fruit:4:1
+  │  
+4 │ ╭ [fruit.physical]
+5 │ │ color = "red"
+6 │ │ shape = "round"
+  │ ╰───────────────^
 
 note[string]: root_fruit_0_variety_0_name
   ┌─ fruit:9:9
@@ -33,10 +35,11 @@ note[string]: root_fruit_0_variety_0_name
   │         ^^^^^^^^^^^^^
 
 note[table]: root_fruit_0_variety_0
-  ┌─ fruit:1:1
-  │
-1 │ [[fruit]]
-  │ ^
+  ┌─ fruit:8:1
+  │  
+8 │ ╭ [[fruit.variety]]
+9 │ │ name = "red delicious"
+  │ ╰──────────────────────^
 
 note[string]: root_fruit_0_variety_1_name
    ┌─ fruit:12:9
@@ -45,22 +48,25 @@ note[string]: root_fruit_0_variety_1_name
    │         ^^^^^^^^^^^^
 
 note[table]: root_fruit_0_variety_1
-  ┌─ fruit:1:1
-  │
-1 │ [[fruit]]
-  │ ^
+   ┌─ fruit:11:1
+   │  
+11 │ ╭ [[fruit.variety]]
+12 │ │ name = "granny smith"
+   │ ╰─────────────────────^
 
 note[array]: root_fruit_0_variety
-  ┌─ fruit:1:1
-  │
-1 │ [[fruit]]
-  │ ^
+  ┌─ fruit:8:1
+  │  
+8 │ ╭ [[fruit.variety]]
+9 │ │ name = "red delicious"
+  │ ╰──────────────────────^
 
 note[table]: root_fruit_0
   ┌─ fruit:1:1
-  │
-1 │ [[fruit]]
-  │ ^
+  │  
+1 │ ╭ [[fruit]]
+2 │ │ name = "apple"
+  │ ╰──────────────^
 
 note[string]: root_fruit_1_name
    ┌─ fruit:15:9
@@ -75,28 +81,32 @@ note[string]: root_fruit_1_variety_0_name
    │         ^^^^^^^^
 
 note[table]: root_fruit_1_variety_0
-  ┌─ fruit:1:1
-  │
-1 │ [[fruit]]
-  │ ^
+   ┌─ fruit:17:1
+   │  
+17 │ ╭ [[fruit.variety]]
+18 │ │ name = "plantain"
+   │ ╰─────────────────^
 
 note[array]: root_fruit_1_variety
-  ┌─ fruit:1:1
-  │
-1 │ [[fruit]]
-  │ ^
+   ┌─ fruit:17:1
+   │  
+17 │ ╭ [[fruit.variety]]
+18 │ │ name = "plantain"
+   │ ╰─────────────────^
 
 note[table]: root_fruit_1
-  ┌─ fruit:1:1
-  │
-1 │ [[fruit]]
-  │ ^
+   ┌─ fruit:14:1
+   │  
+14 │ ╭ [[fruit]]
+15 │ │ name = "banana"
+   │ ╰───────────────^
 
 note[array]: root_fruit
   ┌─ fruit:1:1
-  │
-1 │ [[fruit]]
-  │ ^
+  │  
+1 │ ╭ [[fruit]]
+2 │ │ name = "apple"
+  │ ╰──────────────^
 
 note[table]: root
    ┌─ fruit:1:1
@@ -109,5 +119,3 @@ note[table]: root
 18 │ │ name = "plantain"
 19 │ │ 
    │ ╰^
-
-

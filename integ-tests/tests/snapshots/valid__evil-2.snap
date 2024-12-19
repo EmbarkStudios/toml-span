@@ -31,10 +31,15 @@ note[string]: root_the_hard_bit#_what?
    │                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 note[table]: root_the_hard_bit#
-  ┌─ evil:1:1
-  │
-1 │ # Test file for TOML
-  │ ^
+   ┌─ evil:16:9
+   │  
+16 │ ╭         [the.hard."bit#"]
+17 │ │         "what?" = "You don't think some user won't do that?"
+18 │ │         multi_line_array = [
+19 │ │             "]",
+20 │ │             # ] Oh yes I did
+21 │ │             ]
+   │ ╰─────────────^
 
 note[string]: root_the_hard_harder_test_string
    ┌─ evil:13:27
@@ -79,10 +84,15 @@ note[array]: root_the_hard_test_array2
    │                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 note[table]: root_the_hard
-  ┌─ evil:1:1
-  │
-1 │ # Test file for TOML
-  │ ^
+   ┌─ evil:8:5
+   │  
+ 8 │ ╭     [the.hard]
+ 9 │ │     test_array = [ "] ", " # "]      # ] There you go, parse this!
+10 │ │     test_array2 = [ "Test #11 ]proved that", "Experiment #9 was a success" ]
+11 │ │     # You didn't think it'd as easy as chucking out the last #, did you?
+12 │ │     another_test_string = " Same thing, but with a string #"
+13 │ │     harder_test_string = " And when \"'s are in the string, along with # \""   # "and comments are there too"
+   │ ╰────────────────────────────────────────────────────────────────────────────^
 
 note[string]: root_the_test_string
   ┌─ evil:6:16
@@ -91,10 +101,11 @@ note[string]: root_the_test_string
   │                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 note[table]: root_the
-  ┌─ evil:1:1
-  │
-1 │ # Test file for TOML
-  │ ^
+  ┌─ evil:5:1
+  │  
+5 │ ╭ [the]
+6 │ │ test_string = "You'll hate me after this - #"          # " Annoying, isn't it?
+  │ ╰─────────────────────────────────────────────^
 
 note[table]: root
    ┌─ evil:1:1
@@ -107,5 +118,3 @@ note[table]: root
 21 │ │             ]
 22 │ │ 
    │ ╰^
-
-
