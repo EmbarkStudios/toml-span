@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.4.1] - 2024-12-19
 ### Added
 - [PR#11](https://github.com/EmbarkStudios/toml-span/pull/11) resolved [#10](https://github.com/EmbarkStudios/toml-span/issues/10) by adding span information for tables.
 
@@ -44,7 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial implementation
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/toml-span/compare/0.4.0...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/toml-span/compare/0.4.1...HEAD
+[0.4.1]: https://github.com/EmbarkStudios/toml-span/compare/0.4.0...0.4.1
 [0.4.0]: https://github.com/EmbarkStudios/toml-span/compare/0.3.0...0.4.0
 [0.3.0]: https://github.com/EmbarkStudios/toml-span/compare/0.2.1...0.3.0
 [0.2.1]: https://github.com/EmbarkStudios/toml-span/compare/0.2.0...0.2.1
