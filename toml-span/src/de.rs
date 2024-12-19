@@ -173,7 +173,7 @@ fn deserialize_table<'de, 'b>(
                 table_indices: ctx.table_indices,
                 table_pindices: ctx.table_pindices,
                 de: ctx.de,
-                values: None, //array.then(|| ttable.values.take().unwrap()),
+                values: None,
             };
 
             let value = if array {
@@ -258,13 +258,6 @@ fn deserialize_array<'de, 'b>(
     tables: &'b mut [Table<'de>],
     arr: &mut Vec<value::Value<'de>>,
 ) -> Result<usize, Error> {
-    // if let Some(values) = ctx.values.take() {
-    //     for (key, val) in values {
-    //         //printc!(&ctx, "{} => {val:?}", key.name);
-    //         arr.push(to_value(val, ctx.de)?);
-    //     }
-    // }
-
     while ctx.cur_parent < ctx.max {
         let header_stripped = tables[ctx.cur_parent]
             .header
@@ -369,14 +362,6 @@ fn build_table_pindices<'de>(tables: &[Table<'de>]) -> BTreeMap<InlineVec<DeStr<
     res
 }
 
-// fn headers_equal(hdr_a: &[Key<'_>], hdr_b: &[Key<'_>]) -> bool {
-//     if hdr_a.len() != hdr_b.len() {
-//         return false;
-//     }
-//     hdr_a.iter().zip(hdr_b.iter()).all(|(h1, h2)| h1.1 == h2.1)
-// }
-
-#[derive(Debug)]
 struct Table<'de> {
     at: usize,
     end: usize,
@@ -385,10 +370,19 @@ struct Table<'de> {
     array: bool,
 }
 
-#[derive(Debug, Default)]
 struct TableValues<'de> {
     values: Vec<TablePair<'de>>,
     span: Option<Span>,
+}
+
+#[allow(clippy::derivable_impls)]
+impl Default for TableValues<'_> {
+    fn default() -> Self {
+        Self {
+            values: Vec::new(),
+            span: None,
+        }
+    }
 }
 
 impl<'a> Deserializer<'a> {
@@ -1014,60 +1008,6 @@ impl<'a> Deserializer<'a> {
     }
 }
 
-// impl Error {
-//     pub(crate) fn line_col(&self) -> Option<(usize, usize)> {
-//         self.line.map(|line| (line, self.col))
-//     }
-
-//     fn from_kind(at: Option<usize>, kind: ErrorKind) -> Self {
-//         Error {
-//             kind,
-//             line: None,
-//             col: 0,
-//             at,
-//             message: String::new(),
-//             key: Vec::new(),
-//         }
-//     }
-
-//     fn custom(at: Option<usize>, s: String) -> Self {
-//         Error {
-//             kind: ErrorKind::Custom,
-//             line: None,
-//             col: 0,
-//             at,
-//             message: s,
-//             key: Vec::new(),
-//         }
-//     }
-
-//     pub(crate) fn add_key_context(&mut self, key: &str) {
-//         self.key.insert(0, key.to_string());
-//     }
-
-//     fn fix_offset<F>(&mut self, f: F)
-//     where
-//         F: FnOnce() -> Option<usize>,
-//     {
-//         // An existing offset is always better positioned than anything we might
-//         // want to add later.
-//         if self.at.is_none() {
-//             self.at = f();
-//         }
-//     }
-
-//     fn fix_linecol<F>(&mut self, f: F)
-//     where
-//         F: FnOnce(usize) -> (usize, usize),
-//     {
-//         if let Some(at) = self.at {
-//             let (line, col) = f(at);
-//             self.line = Some(line);
-//             self.col = col;
-//         }
-//     }
-// }
-
 impl std::convert::From<Error> for std::io::Error {
     fn from(e: Error) -> Self {
         std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string())
@@ -1126,14 +1066,12 @@ impl<'a> Header<'a> {
     }
 }
 
-#[derive(Debug)]
 struct Val<'a> {
     e: E<'a>,
     start: usize,
     end: usize,
 }
 
-#[derive(Debug)]
 enum E<'a> {
     Integer(i64),
     Float(f64),
