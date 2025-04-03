@@ -1,9 +1,9 @@
 //! Provides helpers for deserializing [`Value`]/[`ValueInner`] into Rust types
 
 use crate::{
+    DeserError, Deserialize, Error, ErrorKind, Span,
     span::Spanned,
     value::{self, Table, Value, ValueInner},
-    DeserError, Deserialize, Error, ErrorKind, Span,
 };
 use std::{fmt::Display, str::FromStr};
 

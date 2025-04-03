@@ -86,7 +86,10 @@ name = "Born in the USA"
 "#
     );
     valid!(sub_empty, "[a]\n[a.b]");
-    valid!(table_span, "\n[workspace]\nmembers = true\nother = false\n[workspace.foo]\nbar=3\n\n[workspace.bar]\ninline = { foo = 3 }\n\n");
+    valid!(
+        table_span,
+        "\n[workspace]\nmembers = true\nother = false\n[workspace.foo]\nbar=3\n\n[workspace.bar]\ninline = { foo = 3 }\n\n"
+    );
 }
 
 mod numbers {

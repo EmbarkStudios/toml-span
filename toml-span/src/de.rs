@@ -1,15 +1,15 @@
 //! Core deserialization logic that deserializes toml content to [`Value`]
 
 use crate::{
+    Span,
     error::{Error, ErrorKind},
     tokens::{Error as TokenError, Token, Tokenizer},
     value::{self, Key, Value, ValueInner},
-    Span,
 };
 use smallvec::SmallVec;
 use std::{
     borrow::Cow,
-    collections::{btree_map::Entry, BTreeMap},
+    collections::{BTreeMap, btree_map::Entry},
 };
 
 type DeStr<'de> = Cow<'de, str>;
@@ -719,7 +719,7 @@ impl<'a> Deserializer<'a> {
                             start,
                             Some(start + s.len()),
                             ErrorKind::InvalidNumber,
-                        ))
+                        ));
                     }
                 }
             } else {
