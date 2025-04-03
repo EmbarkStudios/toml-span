@@ -2,10 +2,10 @@
 
 use integ_tests::{invalid_de, valid_de};
 use toml_span::{
+    DeserError, Deserialize,
     de_helpers::*,
     span::Spanned,
     value::{Value, ValueInner},
-    DeserError, Deserialize,
 };
 
 #[derive(Debug)]

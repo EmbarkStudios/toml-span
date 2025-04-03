@@ -4,7 +4,7 @@ members = ["integ-tests", "toml-span"]
 
 [workspace.package]
 authors = ["Embark <opensource@embark-studios.com>"]
-edition = "2021"
+edition = "2024"
 license = "MIT OR Apache-2.0"
 homepage = "https://github.com/EmbarkStudios/toml-span"
 repository = "https://github.com/EmbarkStudios/toml-span"

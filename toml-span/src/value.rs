@@ -52,7 +52,7 @@ impl<'de> Value<'de> {
     /// Returns true if the value is a table and is non-empty
     #[inline]
     pub fn has_keys(&self) -> bool {
-        self.value.as_ref().map_or(false, |val| {
+        self.value.as_ref().is_some_and(|val| {
             if let ValueInner::Table(table) = val {
                 !table.is_empty()
             } else {
@@ -64,7 +64,7 @@ impl<'de> Value<'de> {
     /// Returns true if the value is a table and has the specified key
     #[inline]
     pub fn has_key(&self, key: &str) -> bool {
-        self.value.as_ref().map_or(false, |val| {
+        self.value.as_ref().is_some_and(|val| {
             if let ValueInner::Table(table) = val {
                 table.contains_key(key)
             } else {

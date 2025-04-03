@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Changed
+- [PR#12](https://github.com/EmbarkStudios/toml-span/pull/12) updated `codespan-reporting` to 0.12, and update to edition 2024.
+
 ## [0.4.1] - 2024-12-19
 ### Added
 - [PR#11](https://github.com/EmbarkStudios/toml-span/pull/11) resolved [#10](https://github.com/EmbarkStudios/toml-span/issues/10) by adding span information for tables.

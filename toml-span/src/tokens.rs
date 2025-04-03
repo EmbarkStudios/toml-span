@@ -1,7 +1,7 @@
 #![allow(missing_docs)]
 //! The tokenizer is publicly exposed if you wish to use it instead
 
-use crate::{value::Key, Span};
+use crate::{Span, value::Key};
 use std::{borrow::Cow, char, str};
 
 #[derive(Eq, PartialEq, Debug)]
@@ -398,7 +398,6 @@ impl<'a> Tokenizer<'a> {
                                 match ch {
                                     ' ' | '\t' => {
                                         me.chars.next();
-                                        continue;
                                     }
                                     '\n' => {
                                         me.chars.next();
