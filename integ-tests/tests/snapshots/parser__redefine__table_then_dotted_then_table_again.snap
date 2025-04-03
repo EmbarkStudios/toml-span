@@ -8,9 +8,7 @@ error[duplicate-table]:
 2 │ ╭   [a]
 3 │ │   foo="bar"
   │ ╰──' first table instance
-  · │  
+  ·    
 6 │   ╭ [a]
 7 │   │ 
   │   ╰^ duplicate table
-
-
