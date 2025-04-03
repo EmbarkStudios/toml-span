@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.5.0] - 2025-04-03
 ### Changed
 - [PR#12](https://github.com/EmbarkStudios/toml-span/pull/12) updated `codespan-reporting` to 0.12, and update to edition 2024.
 
@@ -48,7 +49,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial implementation
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/toml-span/compare/0.4.1...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/toml-span/compare/0.5.0...HEAD
+[0.5.0]: https://github.com/EmbarkStudios/toml-span/compare/0.4.1...0.5.0
 [0.4.1]: https://github.com/EmbarkStudios/toml-span/compare/0.4.0...0.4.1
 [0.4.0]: https://github.com/EmbarkStudios/toml-span/compare/0.3.0...0.4.0
 [0.3.0]: https://github.com/EmbarkStudios/toml-span/compare/0.2.1...0.3.0
