@@ -9,8 +9,10 @@ publish = false
 codespan-reporting = "0.12"
 insta = { version = "1.34", features = ["json"] }
 pretty_assertions = "1.4"
-toml-test-harness = "0.4"
 toml-span = { workspace = true, features = ["reporting", "serde"] }
+
+[dev-dependencies]
+toml-test-harness = "0.4"
 
 [[test]]
 name = "toml_test"
