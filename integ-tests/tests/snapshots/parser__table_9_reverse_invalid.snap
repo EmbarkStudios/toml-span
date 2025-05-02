@@ -1,0 +1,12 @@
+---
+source: integ-tests/tests/parser.rs
+expression: error
+---
+error[duplicate-key]: 
+  ┌─ table_9_reverse_invalid:2:14
+  │
+2 │ [fruit.apple.taste]  # INVALID
+  │              ^^^^^ duplicate key
+  ·
+6 │ apple.taste.sweet = true
+  │       ----- first key instance

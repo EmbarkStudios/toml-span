@@ -49,6 +49,12 @@ name = "Born in the USA"
 "#
 );
 
+valid!(table_9_valid);
+valid!(table_9_reverse_valid);
+invalid!(table_9_invalid);
+invalid!(table_9_reverse_invalid);
+valid!(array_within_dotted);
+
 mod stray_cr {
     use super::invalid;
 
