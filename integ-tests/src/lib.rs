@@ -221,8 +221,8 @@ macro_rules! invalid {
             let toml_str =
                 std::fs::read_to_string(dbg!(concat!("data/", stringify!($name), ".toml")))
                     .expect(concat!("failed to load ", stringify!($name), ".toml"));
-            let error = toml_span::parse(toml_str).unwrap_err();
-            $crate::error_snapshot!($name, error, &toml_str);
+            let error = toml_span::parse(&toml_str).unwrap_err();
+            $crate::error_snapshot!($name, Some(error.to_diagnostic(())), &toml_str);
         }
     };
     ($name:ident, $toml:expr) => {

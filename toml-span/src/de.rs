@@ -10,6 +10,7 @@ use smallvec::SmallVec;
 use std::{
     borrow::Cow,
     collections::{BTreeMap, btree_map::Entry},
+    ops::Range,
 };
 
 type DeStr<'de> = Cow<'de, str>;
@@ -20,28 +21,23 @@ type InlineVec<T> = SmallVec<[T; 5]>;
 pub fn parse(s: &str) -> Result<Value<'_>, Error> {
     let mut de = Deserializer::new(s);
 
-    let mut tables = de.tables()?;
-    let table_indices = build_table_indices(&tables);
-    let table_pindices = build_table_pindices(&tables);
-
-    let root_ctx = Ctx {
-        depth: 0,
-        cur: 0,
-        cur_parent: 0,
-        table_indices: &table_indices,
-        table_pindices: &table_pindices,
+    let raw_tables = de.tables()?;
+    let mut ctx = DeserializeCtx {
+        table_indices: &build_table_indices(&raw_tables),
+        table_pindices: &build_table_pindices(&raw_tables),
+        raw_tables,
         de: &de,
-        values: None,
-        max: tables.len(),
     };
+    let root = ctx.deserialize_entry(
+        DeserializeTableIdx {
+            table_idx: 0,
+            depth: 0,
+            idx_range: 0..ctx.raw_tables.len(),
+        },
+        Vec::new(),
+    )?;
 
-    let mut root = value::Table::new();
-    deserialize_table(root_ctx, &mut tables, &mut root)?;
-
-    Ok(Value::with_span(
-        ValueInner::Table(root),
-        Span::new(0, s.len()),
-    ))
+    Ok(Value::with_span(root, Span::new(0, s.len())))
 }
 
 struct Deserializer<'a> {
@@ -49,159 +45,233 @@ struct Deserializer<'a> {
     tokens: Tokenizer<'a>,
 }
 
-struct Ctx<'de, 'b> {
-    depth: usize,
-    cur: usize,
-    cur_parent: usize,
-    max: usize,
+struct DeserializeCtx<'de, 'b> {
+    raw_tables: Vec<Table<'de>>,
+    // maps table headers to a list of tables with that exact header
+    // (the list contains indices into `raw_tables` and is ordered)
     table_indices: &'b BTreeMap<InlineVec<DeStr<'de>>, Vec<usize>>,
+    // maps table headers to a list of all subtables
+    // (the list contains indices into `raw_tables` and is ordered)
     table_pindices: &'b BTreeMap<InlineVec<DeStr<'de>>, Vec<usize>>,
     de: &'b Deserializer<'de>,
-    values: Option<Vec<TablePair<'de>>>,
-    //array: bool,
 }
+// specifies the table/array that is currently being deserialized, namely the
+// table/array with the header `raw_tables[table_idx].header[0..depth]`
+struct DeserializeTableIdx {
+    // index of the first occurence of the desired header (even as a prefix)
+    table_idx: usize,
+    depth: usize,
+    // range of `raw_tables` indices to consider, used to isolate subtables of
+    // different array entries
+    idx_range: Range<usize>,
+}
+impl DeserializeTableIdx {
+    fn get_header<'de>(&self, raw_tables: &[Table<'de>]) -> InlineVec<DeStr<'de>> {
+        if self.depth == 0 {
+            return InlineVec::new();
+        }
 
-impl Ctx<'_, '_> {
-    #[inline]
-    fn error(&self, start: usize, end: Option<usize>, kind: ErrorKind) -> Error {
-        self.de.error(start, end, kind)
+        raw_tables[self.table_idx].header[0..self.depth]
+            .iter()
+            .map(|key| key.name.clone())
+            .collect()
     }
 }
+impl<'de, 'b> DeserializeCtx<'de, 'b> {
+    // deserialize the table/array given by `table_idx`
+    fn deserialize_entry(
+        &mut self,
+        table_idx: DeserializeTableIdx,
+        // values defined via dotted keys should be passed on to the corresponding subtable
+        additional_values: Vec<TablePair<'de>>,
+    ) -> Result<value::ValueInner<'de>, Error> {
+        let current_header = table_idx.get_header(&self.raw_tables);
+        let matching_tables = self.get_matching_tables(&current_header, &table_idx.idx_range);
 
-fn deserialize_table<'de, 'b>(
-    mut ctx: Ctx<'de, 'b>,
-    tables: &'b mut [Table<'de>],
-    table: &mut value::Table<'de>,
-) -> Result<usize, Error> {
-    while ctx.cur_parent < ctx.max && ctx.cur < ctx.max {
-        if let Some(values) = ctx.values.take() {
-            for (key, val) in values {
-                table_insert(table, key, val, ctx.de)?;
-            }
-        }
+        let is_array = matching_tables
+            .iter()
+            .all(|idx| self.raw_tables[*idx].array)
+            && !matching_tables.is_empty();
 
-        let next_table = {
-            let prefix_stripped: InlineVec<_> = tables[ctx.cur_parent].header[..ctx.depth]
-                .iter()
-                .map(|v| v.name.clone())
-                .collect::<InlineVec<_>>();
-            ctx.table_pindices
-                .get(&prefix_stripped)
-                .and_then(|entries| {
-                    let start = entries.binary_search(&ctx.cur).unwrap_or_else(|v| v);
-                    if start == entries.len() || entries[start] < ctx.cur {
-                        return None;
-                    }
-                    entries[start..].iter().find_map(|i| {
-                        let i = *i;
-                        (i < ctx.max && tables[i].values.is_some()).then_some(i)
-                    })
-                })
-        };
-
-        let Some(pos) = next_table else {
-            break;
-        };
-
-        ctx.cur = pos;
-
-        // Test to see if we're duplicating our parent's table, and if so
-        // then this is an error in the toml format
-        if ctx.cur_parent != pos {
-            let cur = &tables[pos];
-            let parent = &tables[ctx.cur_parent];
-            if parent.header == cur.header {
-                let name = cur.header.iter().fold(String::new(), |mut s, k| {
-                    if !s.is_empty() {
-                        s.push('.');
-                    }
-                    s.push_str(&k.name);
-                    s
-                });
-
-                let first = Span::new(parent.at, parent.end);
-
-                return Err(ctx.error(
-                    cur.at,
-                    Some(cur.end),
-                    ErrorKind::DuplicateTable { name, first },
+        if is_array {
+            // catch invalid cases like:
+            //   [a.b]
+            //   [[a]]
+            if table_idx.table_idx < matching_tables[0] {
+                let array_tbl = &self.raw_tables[matching_tables[0]];
+                return Err(self.de.error(
+                    array_tbl.at,
+                    Some(array_tbl.end),
+                    ErrorKind::RedefineAsArray,
                 ));
             }
+            assert!(additional_values.is_empty());
 
-            // If we're here we know we should share the same prefix, and if
-            // the longer table was defined first then we want to narrow
-            // down our parent's length if possible to ensure that we catch
-            // duplicate tables defined afterwards.
-            let parent_len = parent.header.len();
-            let cur_len = cur.header.len();
-            if cur_len < parent_len {
-                ctx.cur_parent = pos;
+            let mut array = value::Array::new();
+            for (i, array_entry_idx) in matching_tables.iter().copied().enumerate() {
+                let entry_range_end = matching_tables
+                    .get(i + 1)
+                    .copied()
+                    .unwrap_or(table_idx.idx_range.end);
+
+                let span = Self::get_table_span(&self.raw_tables[array_entry_idx]);
+                let values = self.raw_tables[array_entry_idx].values.take().unwrap();
+                let array_entry = self.deserialize_as_table(
+                    &current_header,
+                    array_entry_idx..entry_range_end,
+                    values.values.into_iter(),
+                )?;
+                array.push(Value::with_span(ValueInner::Table(array_entry), span));
             }
-        }
-
-        let ttable = &mut tables[pos];
-
-        // If we're not yet at the appropriate depth for this table then we
-        // just next the next portion of its header and then continue
-        // decoding.
-        if ctx.depth != ttable.header.len() {
-            let key = ttable.header[ctx.depth].clone();
-            if let Some((k, _)) = table.get_key_value(&key) {
-                return Err(ctx.error(
-                    key.span.start,
-                    Some(key.span.end),
-                    ErrorKind::DuplicateKey {
-                        key: key.name.to_string(),
-                        first: k.span,
+            Ok(ValueInner::Array(array))
+        } else {
+            if matching_tables.len() > 1 {
+                let first_tbl = &self.raw_tables[matching_tables[0]];
+                let second_tbl = &self.raw_tables[matching_tables[1]];
+                return Err(self.de.error(
+                    second_tbl.at,
+                    Some(second_tbl.end),
+                    ErrorKind::DuplicateTable {
+                        name: current_header.last().unwrap().to_string(),
+                        first: Span::new(first_tbl.at, first_tbl.end),
                     },
                 ));
             }
 
-            let span = ttable.values.as_ref().and_then(|v| v.span).map_or_else(
-                || Span::new(ttable.at, ttable.end),
-                |span| Span::new(ttable.at.min(span.start), ttable.end.max(span.end)),
-            );
+            let values = matching_tables
+                .first()
+                .map(|idx| {
+                    self.raw_tables[*idx]
+                        .values
+                        .take()
+                        .unwrap()
+                        .values
+                        .into_iter()
+                })
+                .unwrap_or_default()
+                .chain(additional_values);
+            let subtable =
+                self.deserialize_as_table(&current_header, table_idx.idx_range, values)?;
 
-            let array = ttable.array && ctx.depth == ttable.header.len() - 1;
-            ctx.cur += 1;
+            Ok(ValueInner::Table(subtable))
+        }
+    }
+    fn deserialize_as_table(
+        &mut self,
+        header: &[DeStr<'de>],
+        range: Range<usize>,
+        values: impl Iterator<Item = TablePair<'de>>,
+    ) -> Result<value::Table<'de>, Error> {
+        let mut table = value::Table::new();
+        let mut dotted_keys_map = BTreeMap::new();
 
-            let cctx = Ctx {
-                depth: ctx.depth + if array { 0 } else { 1 },
-                max: ctx.max,
-                cur: 0,
-                cur_parent: pos,
-                table_indices: ctx.table_indices,
-                table_pindices: ctx.table_pindices,
-                de: ctx.de,
-                values: None,
-            };
-
-            let value = if array {
-                let mut arr = Vec::new();
-                deserialize_array(cctx, tables, &mut arr)?;
-                ValueInner::Array(arr)
-            } else {
-                let mut tab = value::Table::new();
-                deserialize_table(cctx, tables, &mut tab)?;
-                ValueInner::Table(tab)
-            };
-
-            table.insert(key, Value::with_span(value, span));
-            continue;
+        for (key, val) in values {
+            match val.e {
+                E::DottedTable(mut tbl_vals) => {
+                    tbl_vals.span = Some(Span::new(val.start, val.end));
+                    dotted_keys_map.insert(key, tbl_vals);
+                }
+                _ => table_insert(&mut table, key, val, self.de)?,
+            }
         }
 
-        // Rule out cases like:
-        //
-        //      [[foo.bar]]
-        //      [[foo]]
-        if ttable.array {
-            return Err(ctx.error(ttable.at, Some(ttable.end), ErrorKind::RedefineAsArray));
+        let subtables = self.get_subtables(header, &range);
+        for &subtable_idx in subtables {
+            if self.raw_tables[subtable_idx].values.is_none() {
+                continue;
+            }
+
+            let subtable_name = &self.raw_tables[subtable_idx].header[header.len()];
+
+            let dotted_entries = match dotted_keys_map.remove_entry(subtable_name) {
+                // Detect redefinitions of tables created via dotted keys, as
+                // these are considered errors, e.g:
+                //   apple.color = "red"
+                //   [apple]  # INVALID
+                // However adding subtables is allowed:
+                //   apple.color = "red"
+                //   [apple.texture]  # VALID
+                Some((previous_key, _))
+                    if self.raw_tables[subtable_idx].header.len() == header.len() + 1 =>
+                {
+                    return Err(self.de.error(
+                        subtable_name.span.start,
+                        Some(subtable_name.span.end),
+                        ErrorKind::DuplicateKey {
+                            key: subtable_name.to_string(),
+                            first: previous_key.span,
+                        },
+                    ));
+                }
+                Some((_, dotted_entries)) => dotted_entries.values,
+                None => Vec::new(),
+            };
+
+            match table.entry(subtable_name.clone()) {
+                Entry::Vacant(vac) => {
+                    let subtable_span = Self::get_table_span(&self.raw_tables[subtable_idx]);
+                    let subtable_idx = DeserializeTableIdx {
+                        table_idx: subtable_idx,
+                        depth: header.len() + 1,
+                        idx_range: range.clone(),
+                    };
+                    let entry = self.deserialize_entry(subtable_idx, dotted_entries)?;
+                    vac.insert(Value::with_span(entry, subtable_span));
+                }
+                Entry::Occupied(occ) => {
+                    return Err(self.de.error(
+                        subtable_name.span.start,
+                        Some(subtable_name.span.end),
+                        ErrorKind::DuplicateKey {
+                            key: subtable_name.to_string(),
+                            first: occ.key().span,
+                        },
+                    ));
+                }
+            };
         }
 
-        ctx.values = ttable.values.take().map(|table| table.values);
+        for (key, val) in dotted_keys_map {
+            let val_span = val.span.unwrap();
+            let val = Val {
+                e: E::DottedTable(val),
+                start: val_span.start,
+                end: val_span.end,
+            };
+            table_insert(&mut table, key, val, self.de)?;
+        }
+
+        Ok(table)
     }
 
-    Ok(ctx.cur_parent)
+    fn get_matching_tables(&self, header: &[DeStr<'de>], range: &Range<usize>) -> &'b [usize] {
+        let matching_tables = self
+            .table_indices
+            .get(header)
+            .map(Vec::as_slice)
+            .unwrap_or_default();
+        Self::get_subslice_in_range(matching_tables, range)
+    }
+    fn get_subtables(&self, header: &[DeStr<'de>], range: &Range<usize>) -> &'b [usize] {
+        let subtables = self
+            .table_pindices
+            .get(header)
+            .map(Vec::as_slice)
+            .unwrap_or_default();
+        Self::get_subslice_in_range(subtables, range)
+    }
+    fn get_subslice_in_range<'a>(slice: &'a [usize], range: &Range<usize>) -> &'a [usize] {
+        let start_idx = slice.partition_point(|idx| *idx < range.start);
+        let end_idx = slice.partition_point(|idx| *idx < range.end);
+        &slice[start_idx..end_idx]
+    }
+
+    fn get_table_span(ttable: &Table<'de>) -> Span {
+        ttable.values.as_ref().and_then(|v| v.span).map_or_else(
+            || Span::new(ttable.at, ttable.end),
+            |span| Span::new(ttable.at.min(span.start), ttable.end.max(span.end)),
+        )
+    }
 }
 
 fn to_value<'de>(val: Val<'de>, de: &Deserializer<'de>) -> Result<Value<'de>, Error> {
@@ -253,63 +323,6 @@ fn table_insert<'de>(
     }
 }
 
-fn deserialize_array<'de, 'b>(
-    mut ctx: Ctx<'de, 'b>,
-    tables: &'b mut [Table<'de>],
-    arr: &mut Vec<value::Value<'de>>,
-) -> Result<usize, Error> {
-    while ctx.cur_parent < ctx.max {
-        let header_stripped = tables[ctx.cur_parent]
-            .header
-            .iter()
-            .map(|v| v.name.clone())
-            .collect::<InlineVec<_>>();
-        let start_idx = ctx.cur_parent + 1;
-        let next = ctx
-            .table_indices
-            .get(&header_stripped)
-            .and_then(|entries| {
-                let start = entries.binary_search(&start_idx).unwrap_or_else(|v| v);
-                if start == entries.len() || entries[start] < start_idx {
-                    return None;
-                }
-                entries[start..]
-                    .iter()
-                    .filter_map(|i| if *i < ctx.max { Some(*i) } else { None })
-                    .map(|i| (i, &tables[i]))
-                    .find(|(_, table)| table.array)
-                    .map(|p| p.0)
-            })
-            .unwrap_or(ctx.max);
-
-        let ttable = &mut tables[ctx.cur_parent];
-
-        let span = ttable.values.as_ref().and_then(|v| v.span).map_or_else(
-            || Span::new(ttable.at, ttable.end),
-            |span| Span::new(ttable.at.min(span.start), ttable.end.max(span.end)),
-        );
-
-        let actx = Ctx {
-            values: Some(ttable.values.take().expect("no array values").values),
-            max: next,
-            depth: ctx.depth + 1,
-            cur: 0,
-            cur_parent: ctx.cur_parent,
-            table_indices: ctx.table_indices,
-            table_pindices: ctx.table_pindices,
-            de: ctx.de,
-        };
-
-        let mut table = value::Table::new();
-        deserialize_table(actx, tables, &mut table)?;
-        arr.push(Value::with_span(ValueInner::Table(table), span));
-
-        ctx.cur_parent = next;
-    }
-
-    Ok(ctx.cur_parent)
-}
-
 // Builds a datastructure that allows for efficient sublinear lookups. The
 // returned BTreeMap contains a mapping from table header (like [a.b.c]) to list
 // of tables with that precise name. The tables are being identified by their
@@ -333,9 +346,10 @@ fn build_table_indices<'de>(tables: &[Table<'de>]) -> BTreeMap<InlineVec<DeStr<'
 
 // Builds a datastructure that allows for efficient sublinear lookups. The
 // returned BTreeMap contains a mapping from table header (like [a.b.c]) to list
-// of tables whose name at least starts with the specified name. So searching
-// for [a.b] would give both [a.b.c.d] as well as [a.b.e]. The tables are being
-// identified by their index in the passed slice.
+// of tables whose name starts with the specified name and is strictly longer.
+// So searching for [a.b] would give both [a.b.c.d] as well as [a.b.e], but not
+// [a.b] itself. The tables are being identified by their index in the passed
+// slice.
 //
 // A list is used for two reasons: First, the implementation also stores arrays
 // in the same data structure and any top level array of size 2 or greater
@@ -353,7 +367,7 @@ fn build_table_pindices<'de>(tables: &[Table<'de>]) -> BTreeMap<InlineVec<DeStr<
             .iter()
             .map(|v| v.name.clone())
             .collect::<InlineVec<_>>();
-        for len in 0..=header.len() {
+        for len in 0..header.len() {
             res.entry(header[..len].into())
                 .or_insert_with(Vec::new)
                 .push(i);
