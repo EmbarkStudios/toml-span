@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Fixed
+- [PR#14](https://github.com/EmbarkStudios/toml-span/pull/14) fixed an issue where subtables were not correctly created with dotted keys. Thanks [@hacrvlq](https://github.com/hacrvlq)!
+
 ## [0.5.0] - 2025-04-03
 ### Changed
 - [PR#12](https://github.com/EmbarkStudios/toml-span/pull/12) updated `codespan-reporting` to 0.12, and update to edition 2024.
