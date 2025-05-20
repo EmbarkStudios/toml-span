@@ -153,7 +153,7 @@ dependencies = [
 
 [[package]]
 name = "toml-span"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "codespan-reporting",
  "serde",

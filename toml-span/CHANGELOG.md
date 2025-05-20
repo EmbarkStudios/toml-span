@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.5.1] - 2025-05-20
 ### Fixed
 - [PR#14](https://github.com/EmbarkStudios/toml-span/pull/14) fixed an issue where subtables were not correctly created with dotted keys. Thanks [@hacrvlq](https://github.com/hacrvlq)!
 
@@ -52,7 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial implementation
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/toml-span/compare/0.5.0...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/toml-span/compare/0.5.1...HEAD
+[0.5.1]: https://github.com/EmbarkStudios/toml-span/compare/0.5.0...0.5.1
 [0.5.0]: https://github.com/EmbarkStudios/toml-span/compare/0.4.1...0.5.0
 [0.4.1]: https://github.com/EmbarkStudios/toml-span/compare/0.4.0...0.4.1
 [0.4.0]: https://github.com/EmbarkStudios/toml-span/compare/0.3.0...0.4.0
