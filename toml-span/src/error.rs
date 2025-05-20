@@ -230,21 +230,6 @@ impl Display for Error {
             ErrorKind::UnexpectedValue { expected, .. } => write!(f, "expected '{expected:?}'")?,
         }
 
-        // if !self.key.is_empty() {
-        //     write!(f, " for key `")?;
-        //     for (i, k) in self.key.iter().enumerate() {
-        //         if i > 0 {
-        //             write!(f, ".")?;
-        //         }
-        //         write!(f, "{}", k)?;
-        //     }
-        //     write!(f, "`")?;
-        // }
-
-        // if let Some(line) = self.line {
-        //     write!(f, " at line {} column {}", line + 1, self.col + 1)?;
-        // }
-
         Ok(())
     }
 }
@@ -262,7 +247,7 @@ impl Error {
 
         use codespan_reporting::diagnostic::Label;
 
-        let diag = match &self.kind {
+        match &self.kind {
             ErrorKind::DuplicateKey { first, .. } => diag.with_labels(vec![
                 Label::secondary(fid, *first).with_message("first key instance"),
                 Label::primary(fid, self.span).with_message("duplicate key"),
@@ -352,9 +337,7 @@ impl Error {
             ErrorKind::Custom(msg) => diag
                 .with_message(msg.to_string())
                 .with_labels(vec![Label::primary(fid, self.span)]),
-        };
-
-        diag
+        }
     }
 }
 
