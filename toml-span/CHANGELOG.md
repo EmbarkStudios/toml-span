@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.5.2] - 2025-06-11
 ### Fixed
 - [PR#16](https://github.com/EmbarkStudios/toml-span/pull/16) adding the missing `package.repository` field to point the workspace.
 
@@ -56,7 +57,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial implementation
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/toml-span/compare/0.5.1...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/toml-span/compare/0.5.2...HEAD
+[0.5.2]: https://github.com/EmbarkStudios/toml-span/compare/0.5.1...0.5.2
 [0.5.1]: https://github.com/EmbarkStudios/toml-span/compare/0.5.0...0.5.1
 [0.5.0]: https://github.com/EmbarkStudios/toml-span/compare/0.4.1...0.5.0
 [0.4.1]: https://github.com/EmbarkStudios/toml-span/compare/0.4.0...0.4.1
