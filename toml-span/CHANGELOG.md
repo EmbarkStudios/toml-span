@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Fixed
+- [PR#16](https://github.com/EmbarkStudios/toml-span/pull/16) adding the missing `package.repository` field to point the workspace.
+
 ## [0.5.1] - 2025-05-20
 ### Fixed
 - [PR#14](https://github.com/EmbarkStudios/toml-span/pull/14) fixed an issue where subtables were not correctly created with dotted keys. Thanks [@hacrvlq](https://github.com/hacrvlq)!
