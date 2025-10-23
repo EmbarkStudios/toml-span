@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Changed
+- [PR#18](https://github.com/EmbarkStudios/toml-span/pull/18) updated `codespan-reporting` to 0.13.
+
 ## [0.5.2] - 2025-06-11
 ### Fixed
 - [PR#16](https://github.com/EmbarkStudios/toml-span/pull/16) adding the missing `package.repository` field to point the workspace.
