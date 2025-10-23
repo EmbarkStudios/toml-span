@@ -136,7 +136,7 @@ pub fn emit_diags(
     let mut output = codespan_reporting::term::termcolor::NoColor::new(Vec::new());
 
     for diag in error {
-        codespan_reporting::term::emit(
+        codespan_reporting::term::emit_to_write_style(
             &mut output,
             &codespan_reporting::term::Config::default(),
             f,
