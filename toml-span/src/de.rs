@@ -776,24 +776,40 @@ impl<'a> Deserializer<'a> {
     // great to defer parsing everything until later.
     fn inline_table(&mut self) -> Result<(Span, TableValues<'a>), Error> {
         let mut ret = TableValues::default();
-        self.eat_whitespace();
+
+        // TOML 1.1: inline tables can span multiple lines and have trailing commas
+        let intermediate = |me: &mut Deserializer<'_>| -> Result<(), Error> {
+            loop {
+                me.eat_whitespace();
+                if !me.eat(Token::Newline)? && !me.eat_comment()? {
+                    break;
+                }
+            }
+            Ok(())
+        };
+
+        intermediate(self)?;
         if let Some(span) = self.eat_spanned(Token::RightBrace)? {
             return Ok((span, ret));
         }
         loop {
             let key = self.dotted_key()?;
-            self.eat_whitespace();
+            intermediate(self)?;
             self.expect(Token::Equals)?;
-            self.eat_whitespace();
+            intermediate(self)?;
             let value = self.value()?;
             self.add_dotted_key(key, value, &mut ret)?;
 
-            self.eat_whitespace();
+            intermediate(self)?;
             if let Some(span) = self.eat_spanned(Token::RightBrace)? {
                 return Ok((span, ret));
             }
             self.expect(Token::Comma)?;
-            self.eat_whitespace();
+            intermediate(self)?;
+            // TOML 1.1: trailing comma is allowed
+            if let Some(span) = self.eat_spanned(Token::RightBrace)? {
+                return Ok((span, ret));
+            }
         }
     }
 
