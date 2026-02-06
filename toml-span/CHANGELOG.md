@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.7.0] - 2026-02-06
 ### Added
 - [PR#20](https://github.com/EmbarkStudios/toml-span/pull/20) added support for version 1.1 of the TOML spec. Thanks [@wolfv](https://github.com/wolfv)!
 
@@ -64,7 +65,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial implementation
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/toml-span/compare/0.6.0...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/toml-span/compare/0.7.0...HEAD
+[0.7.0]: https://github.com/EmbarkStudios/toml-span/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/EmbarkStudios/toml-span/compare/0.5.2...0.6.0
 [0.5.2]: https://github.com/EmbarkStudios/toml-span/compare/0.5.1...0.5.2
 [0.5.1]: https://github.com/EmbarkStudios/toml-span/compare/0.5.0...0.5.1
