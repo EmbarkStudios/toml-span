@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Added
+- [PR#20](https://github.com/EmbarkStudios/toml-span/pull/20) added support for version 1.1 of the TOML spec. Thanks [@wolfv](https://github.com/wolfv)!
+
 ## [0.6.0] - 2025-10-23
 ### Changed
 - [PR#18](https://github.com/EmbarkStudios/toml-span/pull/18) updated `codespan-reporting` to 0.13.
