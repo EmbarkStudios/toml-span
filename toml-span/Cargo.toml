@@ -6,6 +6,7 @@ license.workspace = true
 edition.workspace = true
 homepage.workspace = true
 repository.workspace = true
+rust-version = "1.70"
 documentation = "https://docs.rs/toml-span"
 readme = "README.md"
 categories = ["parser-implementations", "config"]
