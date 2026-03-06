@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.7.1] - 2026-03-06
 ### Added
 - [PR#21](https://github.com/EmbarkStudios/toml-span/pull/21) set the MSRV to 1.70.0.
 
@@ -68,7 +69,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial implementation
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/toml-span/compare/0.7.0...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/toml-span/compare/0.7.1...HEAD
+[0.7.1]: https://github.com/EmbarkStudios/toml-span/compare/0.7.0...0.7.1
 [0.7.0]: https://github.com/EmbarkStudios/toml-span/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/EmbarkStudios/toml-span/compare/0.5.2...0.6.0
 [0.5.2]: https://github.com/EmbarkStudios/toml-span/compare/0.5.1...0.5.2
