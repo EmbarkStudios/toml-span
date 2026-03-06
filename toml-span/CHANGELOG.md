@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Added
+- [PR#21](https://github.com/EmbarkStudios/toml-span/pull/21) set the MSRV to 1.70.0.
+
 ## [0.7.0] - 2026-02-06
 ### Added
 - [PR#20](https://github.com/EmbarkStudios/toml-span/pull/20) added support for version 1.1 of the TOML spec. Thanks [@wolfv](https://github.com/wolfv)!
