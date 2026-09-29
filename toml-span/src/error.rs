@@ -32,6 +32,9 @@ pub enum ErrorKind {
     /// EOF was reached when looking for a value.
     UnexpectedEof,
 
+    /// The input contains structures nested more deeply than the parser supports.
+    ExceededDepthLimit,
+
     /// An invalid character not allowed in a string was found.
     InvalidCharInString(char),
 
@@ -138,6 +141,7 @@ impl Display for ErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::UnexpectedEof => f.write_str("unexpected-eof"),
+            Self::ExceededDepthLimit => f.write_str("exceeded-depth-limit"),
             Self::Custom(..) => f.write_str("custom"),
             Self::DottedKeyInvalidType { .. } => f.write_str("dotted-key-invalid-type"),
             Self::DuplicateKey { .. } => f.write_str("duplicate-key"),
@@ -183,6 +187,9 @@ impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.kind {
             ErrorKind::UnexpectedEof => f.write_str("unexpected eof encountered")?,
+            ErrorKind::ExceededDepthLimit => {
+                f.write_str("input exceeds the maximum allowed nesting depth")?
+            }
             ErrorKind::InvalidCharInString(c) => {
                 write!(f, "invalid character in string: `{}`", Escape(*c))?;
             }
@@ -325,6 +332,11 @@ impl Error {
             ErrorKind::UnexpectedEof => diag
                 .with_message("unexpected end of file")
                 .with_labels(vec![Label::primary(fid, self.span)]),
+            ErrorKind::ExceededDepthLimit => diag
+                .with_message("input exceeds the maximum allowed nesting depth")
+                .with_labels(vec![
+                    Label::primary(fid, self.span).with_message("too deeply nested")
+                ]),
             ErrorKind::DottedKeyInvalidType { first } => {
                 diag.with_message(self.to_string()).with_labels(vec![
                     Label::primary(fid, self.span).with_message("attempted to extend table here"),
