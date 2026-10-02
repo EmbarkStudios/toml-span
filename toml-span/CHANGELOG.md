@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Changed
+- [PR#23](https://github.com/EmbarkStudios/toml-span/pull/23) (merged as [PR#24](https://github.com/EmbarkStudios/toml-span/pull/24)) added a recursion limit when parsing to avoid stack overflows.
+
 ## [0.7.1] - 2026-03-06
 ### Added
 - [PR#21](https://github.com/EmbarkStudios/toml-span/pull/21) set the MSRV to 1.70.0.
