@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.7.2] - 2026-10-02
 ### Changed
 - [PR#23](https://github.com/EmbarkStudios/toml-span/pull/23) (merged as [PR#24](https://github.com/EmbarkStudios/toml-span/pull/24)) added a recursion limit when parsing to avoid stack overflows.
 
@@ -72,7 +73,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial implementation
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/toml-span/compare/0.7.1...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/toml-span/compare/0.7.2...HEAD
+[0.7.2]: https://github.com/EmbarkStudios/toml-span/compare/0.7.1...0.7.2
 [0.7.1]: https://github.com/EmbarkStudios/toml-span/compare/0.7.0...0.7.1
 [0.7.0]: https://github.com/EmbarkStudios/toml-span/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/EmbarkStudios/toml-span/compare/0.5.2...0.6.0
