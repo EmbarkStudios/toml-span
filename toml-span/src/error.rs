@@ -186,58 +186,56 @@ impl fmt::Display for Escape {
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.kind {
-            ErrorKind::UnexpectedEof => f.write_str("unexpected eof encountered")?,
+            ErrorKind::UnexpectedEof => f.write_str("unexpected eof encountered"),
             ErrorKind::ExceededDepthLimit => {
-                f.write_str("input exceeds the maximum allowed nesting depth")?
+                f.write_str("input exceeds the maximum allowed nesting depth")
             }
             ErrorKind::InvalidCharInString(c) => {
-                write!(f, "invalid character in string: `{}`", Escape(*c))?;
+                write!(f, "invalid character in string: `{}`", Escape(*c))
             }
             ErrorKind::InvalidEscape(c) => {
-                write!(f, "invalid escape character in string: `{}`", Escape(*c))?;
+                write!(f, "invalid escape character in string: `{}`", Escape(*c))
             }
             ErrorKind::InvalidHexEscape(c) => write!(
                 f,
                 "invalid hex escape character in string: `{}`",
                 Escape(*c)
-            )?,
-            ErrorKind::InvalidEscapeValue(c) => write!(f, "invalid escape value: `{c}`")?,
-            ErrorKind::Unexpected(c) => write!(f, "unexpected character found: `{}`", Escape(*c))?,
-            ErrorKind::UnterminatedString => f.write_str("unterminated string")?,
+            ),
+            ErrorKind::InvalidEscapeValue(c) => write!(f, "invalid escape value: `{c}`"),
+            ErrorKind::Unexpected(c) => write!(f, "unexpected character found: `{}`", Escape(*c)),
+            ErrorKind::UnterminatedString => f.write_str("unterminated string"),
             ErrorKind::Wanted { expected, found } => {
-                write!(f, "expected {expected}, found {found}")?;
+                write!(f, "expected {expected}, found {found}")
             }
-            ErrorKind::InvalidNumber => f.write_str("invalid number")?,
-            ErrorKind::OutOfRange(kind) => write!(f, "out of range of '{kind}'")?,
+            ErrorKind::InvalidNumber => f.write_str("invalid number"),
+            ErrorKind::OutOfRange(kind) => write!(f, "out of range of '{kind}'"),
             ErrorKind::DuplicateTable { name, .. } => {
-                write!(f, "redefinition of table `{name}`")?;
+                write!(f, "redefinition of table `{name}`")
             }
             ErrorKind::DuplicateKey { key, .. } => {
-                write!(f, "duplicate key: `{key}`")?;
+                write!(f, "duplicate key: `{key}`")
             }
-            ErrorKind::RedefineAsArray => f.write_str("table redefined as array")?,
+            ErrorKind::RedefineAsArray => f.write_str("table redefined as array"),
             ErrorKind::MultilineStringKey => {
-                f.write_str("multiline strings are not allowed for key")?;
+                f.write_str("multiline strings are not allowed for key")
             }
-            ErrorKind::Custom(message) => f.write_str(message)?,
+            ErrorKind::Custom(message) => f.write_str(message),
             ErrorKind::DottedKeyInvalidType { .. } => {
-                f.write_str("dotted key attempted to extend non-table type")?;
+                f.write_str("dotted key attempted to extend non-table type")
             }
             ErrorKind::UnexpectedKeys { keys, expected } => write!(
                 f,
                 "unexpected keys in table: `{keys:?}`\nexpected: {expected:?}"
-            )?,
+            ),
             ErrorKind::UnquotedString => {
-                f.write_str("invalid TOML value, did you mean to use a quoted string?")?;
+                f.write_str("invalid TOML value, did you mean to use a quoted string?")
             }
-            ErrorKind::MissingField(field) => write!(f, "missing field '{field}' in table")?,
+            ErrorKind::MissingField(field) => write!(f, "missing field '{field}' in table"),
             ErrorKind::Deprecated { old, new } => {
-                write!(f, "field '{old}' is deprecated, '{new}' has replaced it")?;
+                write!(f, "field '{old}' is deprecated, '{new}' has replaced it")
             }
-            ErrorKind::UnexpectedValue { expected, .. } => write!(f, "expected '{expected:?}'")?,
+            ErrorKind::UnexpectedValue { expected, .. } => write!(f, "expected '{expected:?}'"),
         }
-
-        Ok(())
     }
 }
 
