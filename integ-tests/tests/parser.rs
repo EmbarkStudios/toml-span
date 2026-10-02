@@ -361,3 +361,55 @@ tbl = {
 "#
     );
 }
+
+mod depth_limit {
+    use toml_span::{parse, ErrorKind};
+
+    #[test]
+    fn arrays() {
+        let input = format!("a={}1{}", "[".repeat(1000), "]".repeat(1000));
+        let err = parse(&input).expect_err("deeply nested arrays should be rejected");
+        assert!(matches!(err.kind, ErrorKind::ExceededDepthLimit));
+    }
+
+    #[test]
+    fn inline_tables() {
+        let input = format!("a={}1{}", "{a=".repeat(1000), "}".repeat(1000));
+        let err = parse(&input).expect_err("deeply nested inline tables should be rejected");
+        assert!(matches!(err.kind, ErrorKind::ExceededDepthLimit));
+    }
+
+    #[test]
+    fn table_headers() {
+        let input = format!("[{}]", vec!["a"; 1000].join("."));
+        let err = parse(&input).expect_err("deeply nested table headers should be rejected");
+        assert!(matches!(err.kind, ErrorKind::ExceededDepthLimit));
+    }
+
+    #[test]
+    fn dotted_keys() {
+        let input = format!("{}=1", vec!["a"; 1000].join("."));
+        let err = parse(&input).expect_err("deeply nested dotted keys should be rejected");
+        assert!(matches!(err.kind, ErrorKind::ExceededDepthLimit));
+    }
+
+    #[test]
+    fn dotted_keys_inside_inline_tables() {
+        let key = vec!["k"; 128].join(".");
+        let mut input = String::new();
+        for _ in 0..128 {
+            input.push_str(&format!("{key} = {{ "));
+        }
+        input.push_str("k = 1");
+        input.push_str(&" }".repeat(128));
+
+        let err = parse(&input).expect_err("combined nesting should be rejected");
+        assert!(matches!(err.kind, ErrorKind::ExceededDepthLimit));
+    }
+
+    #[test]
+    fn within_limit_is_ok() {
+        let input = format!("a={}1{}", "[".repeat(50), "]".repeat(50));
+        assert!(parse(&input).is_ok());
+    }
+}
