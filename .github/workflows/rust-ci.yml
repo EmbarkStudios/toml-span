@@ -16,7 +16,7 @@ jobs:
     name: Lint
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
 
       # make sure all code has been formatted with rustfmt
@@ -63,6 +63,6 @@ jobs:
 
   test_success:
     runs-on: ubuntu-24.04
-    needs: [lint,test,deny,publish-check]
+    needs: [lint, test, deny, publish-check]
     steps:
-    - run: echo "All test jobs passed"
+      - run: echo "All test jobs passed"
