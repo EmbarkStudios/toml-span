@@ -3,8 +3,8 @@
 //! Provides [`serde::Serialize`] support for [`Value`] and [`Spanned`]
 
 use crate::{
-    Spanned,
     value::{Value, ValueInner},
+    Spanned,
 };
 use serde::ser::{SerializeMap, SerializeSeq};
 
